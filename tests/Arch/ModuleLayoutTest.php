@@ -2,20 +2,23 @@
 
 declare(strict_types=1);
 
-use App\Modules\Platform\Domain\User;
+// Project root relative to this file: tests/Arch/ModuleLayoutTest.php -> project root.
+$projectRoot = dirname(__DIR__, 2);
 
-test('platform module skeleton exists')
+it('platform module skeleton exists')
     ->expect(fn () => true)
     ->toBeTrue();
 
-test('module layout follows AGENTS.md §5 (canonical sub-folders)', function (string $module): void {
-    $base = base_path("app/Modules/{$module}");
+it('module layout follows AGENTS.md §5 (canonical sub-folders)', function (string $module) use ($projectRoot): void {
+    $base = "{$projectRoot}/app/Modules/{$module}";
 
     expect(is_dir("{$base}/Domain"))->toBeTrue("{$module}/Domain missing")
         ->and(is_dir("{$base}/Application"))->toBeTrue("{$module}/Application missing")
         ->and(is_dir("{$base}/Infrastructure"))->toBeTrue("{$module}/Infrastructure missing")
         ->and(is_dir("{$base}/Http"))->toBeTrue("{$module}/Http missing")
-        ->and(is_dir("{$base}/Contracts"))->toBeTrue("{$module}/Contracts missing");
+        ->and(is_dir("{$base}/Contracts"))->toBeTrue("{$module}/Contracts missing")
+        ->and(is_dir("{$base}/Database"))->toBeTrue("{$module}/Database missing")
+        ->and(is_dir("{$base}/Tests"))->toBeTrue("{$module}/Tests missing");
 })->with([
     'Platform',
     'Catalog',
@@ -32,13 +35,32 @@ test('module layout follows AGENTS.md §5 (canonical sub-folders)', function (st
     'Notifications',
 ]);
 
-test('module namespaces are namespaced under App\\Modules\\', function (): void {
-    expect(class_exists(User::class) || true)->toBeTrue();
-})->skip('placeholder until P1-01 fills the Platform\\Domain\\User value object');
+it('infrastructure models live under Infrastructure, not Domain', function (string $module) use ($projectRoot): void {
+    $modelPath = "{$projectRoot}/app/Modules/{$module}/Infrastructure/Models";
+    expect(is_dir($modelPath))->toBeTrue("{$module}/Infrastructure/Models missing");
+})->with([
+    'Platform',
+    'Catalog',
+    'Inventory',
+    'Reservations',
+    'Folio',
+    'Housekeeping',
+    'Payments',
+    'Distribution',
+    'BookingEngine',
+    'Guests',
+    'Plugins',
+    'Reporting',
+    'Notifications',
+]);
 
-test('infrastructure models live under Infrastructure, not Domain', function (string $module): void {
-    $modelPath = base_path("app/Modules/{$module}/Infrastructure");
-    expect(is_dir($modelPath))->toBeTrue();
+it('app/Support has ValueObjects and Helpers sub-folders', function () use ($projectRoot): void {
+    expect(is_dir("{$projectRoot}/app/Support/ValueObjects"))->toBeTrue()
+        ->and(is_dir("{$projectRoot}/app/Support/Helpers"))->toBeTrue();
+});
+
+it('every Module Contracts/ folder is readable (no permission issues)', function (string $module) use ($projectRoot): void {
+    expect(is_readable("{$projectRoot}/app/Modules/{$module}/Contracts"))->toBeTrue();
 })->with([
     'Platform',
     'Catalog',

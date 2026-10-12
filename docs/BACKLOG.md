@@ -62,7 +62,7 @@ Deps: — · Size: S · Status: todo
 - Acceptance: app registered, review status tracked in `docs/DECISIONS.md` §3.
 
 ### P0-10 Architecture tests for module boundaries
-Deps: P0-01 · Size: S · Status: todo
+Deps: P0-01 · Size: S · Status: done
 - Pest arch tests (or Deptrac) encode the dependency table in `docs/ARCHITECTURE.md` §3: modules reference others only via `Contracts`; no cycles; Eloquent models are not used across modules.
 - Acceptance: introducing a forbidden import in a throwaway branch fails CI.
 

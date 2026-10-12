@@ -6,6 +6,7 @@
     "shell": {
         "sidebar": {
             "brand": "Stayflow",
+            "nav_label": "Primary navigation",
             "nav": {
                 "dashboard": "Dashboard",
                 "reservations": "Reservations",
@@ -29,6 +30,7 @@
         "dashboard": {
             "title": "Operations dashboard",
             "subtitle": "Today's snapshot of arrivals, departures and house status.",
+            "kpi_label": "Key performance indicators",
             "card_arrivals": "Today's arrivals",
             "card_departures": "Today's departures",
             "card_in_house": "In-house guests",
@@ -41,6 +43,7 @@
             "skip_to_main": "Skip to main content",
             "open_menu": "Open menu",
             "close_menu": "Close menu",
+            "search": "Search",
             "loading": "Loading…",
             "save": "Save",
             "cancel": "Cancel",

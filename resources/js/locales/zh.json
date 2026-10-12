@@ -6,6 +6,7 @@
     "shell": {
         "sidebar": {
             "brand": "Stayflow",
+            "nav_label": "主导航",
             "nav": {
                 "dashboard": "仪表板",
                 "reservations": "预订管理",
@@ -29,6 +30,7 @@
         "dashboard": {
             "title": "运营仪表板",
             "subtitle": "今日概览:到达、离开以及客房状态。",
+            "kpi_label": "关键绩效指标",
             "card_arrivals": "今日到达",
             "card_departures": "今日离开",
             "card_in_house": "在住宾客",
@@ -41,6 +43,7 @@
             "skip_to_main": "跳到主内容",
             "open_menu": "打开菜单",
             "close_menu": "关闭菜单",
+            "search": "搜索",
             "loading": "加载中……",
             "save": "保存",
             "cancel": "取消",

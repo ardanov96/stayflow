@@ -42,7 +42,7 @@ const fmt = (value, currentLocale) => {
             <p class="mt-1 text-sm text-gray-600">{{ t('shell.dashboard.subtitle') }}</p>
         </header>
 
-        <section aria-label="Key performance indicators" class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <section :aria-label="t('shell.dashboard.kpi_label')" class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             <div
                 v-for="card in cards"
                 :key="card.id"

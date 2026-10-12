@@ -13,7 +13,7 @@ const { t } = useI18n();
         <button
             type="button"
             class="md:hidden -ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
-            aria-label="Open menu"
+            :aria-label="t('shell.common.open_menu')"
             @click="$emit('toggle-sidebar')"
         >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -23,7 +23,7 @@ const { t } = useI18n();
 
         <div class="flex-1 flex items-center justify-end space-x-3">
             <div class="hidden sm:block flex-1 max-w-md">
-                <label for="global-search" class="sr-only">Search</label>
+                <label for="global-search" class="sr-only">{{ t('shell.common.search') }}</label>
                 <input
                     id="global-search"
                     type="search"

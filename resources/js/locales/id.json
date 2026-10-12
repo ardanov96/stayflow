@@ -6,6 +6,7 @@
     "shell": {
         "sidebar": {
             "brand": "Stayflow",
+            "nav_label": "Navigasi utama",
             "nav": {
                 "dashboard": "Dasbor",
                 "reservations": "Reservasi",
@@ -29,6 +30,7 @@
         "dashboard": {
             "title": "Dasbor operasional",
             "subtitle": "Ringkasan hari ini: kedatangan, keberangkatan, serta status housekeeping.",
+            "kpi_label": "Indikator kinerja utama",
             "card_arrivals": "Kedatangan hari ini",
             "card_departures": "Keberangkatan hari ini",
             "card_in_house": "Tamu menginap",
@@ -41,6 +43,7 @@
             "skip_to_main": "Lewati ke konten utama",
             "open_menu": "Buka menu",
             "close_menu": "Tutup menu",
+            "search": "Cari",
             "loading": "Memuat…",
             "save": "Simpan",
             "cancel": "Batal",

@@ -20,7 +20,7 @@ const appName = computed(() => page.props?.app?.name ?? t('shell.sidebar.brand')
 </script>
 
 <template>
-    <aside class="bg-white border-r border-gray-200 w-64" aria-label="Primary navigation">
+    <aside class="bg-white border-r border-gray-200 w-64" :aria-label="t('shell.sidebar.nav_label')">
         <div class="h-16 flex items-center px-5 border-b border-gray-200">
             <Link :href="route('dashboard')" class="text-lg font-semibold text-gray-900 hover:text-indigo-600">
                 {{ appName }}

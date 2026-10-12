@@ -1,0 +1,55 @@
+{
+    "app": {
+        "name": "Stayflow",
+        "tagline": "酒店运营,自动化处理"
+    },
+    "shell": {
+        "sidebar": {
+            "brand": "Stayflow",
+            "nav": {
+                "dashboard": "仪表板",
+                "reservations": "预订管理",
+                "inventory": "库存",
+                "calendar": "日历",
+                "guests": "宾客",
+                "reports": "报表",
+                "settings": "设置"
+            },
+            "footer": {
+                "version": "版本",
+                "tag": "MVP 构建"
+            }
+        },
+        "topbar": {
+            "search_placeholder": "搜索宾客、预订、客房……",
+            "property_placeholder": "选择酒店",
+            "locale_label": "语言",
+            "user_menu": "账户菜单"
+        },
+        "dashboard": {
+            "title": "运营仪表板",
+            "subtitle": "今日概览:到达、离开以及客房状态。",
+            "card_arrivals": "今日到达",
+            "card_departures": "今日离开",
+            "card_in_house": "在住宾客",
+            "card_occupancy": "入住率",
+            "empty_title": "暂无实时数据",
+            "empty_body": "请在设置中连接酒店以开始接收预订。",
+            "cta_settings": "打开设置"
+        },
+        "common": {
+            "skip_to_main": "跳到主内容",
+            "open_menu": "打开菜单",
+            "close_menu": "关闭菜单",
+            "loading": "加载中……",
+            "save": "保存",
+            "cancel": "取消",
+            "back": "返回"
+        },
+        "locales": {
+            "id": "Bahasa Indonesia",
+            "en": "English",
+            "zh": "中文"
+        }
+    }
+}

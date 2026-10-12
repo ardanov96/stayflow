@@ -18,7 +18,15 @@ createInertiaApp({
             import.meta.glob('./Pages/**/*.vue'),
         ),
     setup({ el, App, props, plugin }) {
-        const initialLocale = props.initialProps?.app?.currentLocale ?? 'en';
+        // Inertia v3 hands the user setup an internal `props` object whose
+        // shape is { initialPage, initialComponent, resolveComponent, ... }.
+        // The actual page props (the ones Inertia::render passed in PHP)
+        // live at `props.initialPage.props`. Earlier code read
+        // `props.initialProps` (typo + missing .props level), so the i18n
+        // instance silently fell back to 'en' and the locale switcher
+        // updated the cookie but the UI stayed in English.
+        const initialLocale =
+            props.initialPage?.props?.app?.currentLocale ?? 'en';
 
         const i18n = createI18n({
             legacy: false,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ShellController;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 
 uses(RefreshDatabase::class);
 
@@ -51,7 +52,14 @@ it('locale update endpoint accepts supported locales and sets the cookie', funct
     $response = $this->post('/locale', ['locale' => 'id']);
 
     $response->assertRedirect();
-    $response->assertCookie('locale', 'id');
+    // The `locale` cookie is in EncryptCookies::$neverEncrypt (see
+    // bootstrap/app.php): its value is just a 2-letter code, not a
+    // secret, and we want the e2e Playwright suite to be able to
+    // pre-seed it without roundtripping through the encryption
+    // protocol. Use assertPlainCookie, not assertCookie, because
+    // assertCookie would try to decrypt a non-encrypted value and
+    // throw DecryptException.
+    $response->assertPlainCookie('locale', 'id');
 });
 
 it('locale update endpoint rejects unsupported locales with 422', function (): void {
@@ -69,8 +77,12 @@ it('the shell uses the configured supported locales set, never a free-form one',
     // Defense-in-depth: verify the controller's surface area hasn't drifted
     // from "single dashboard action" so a future contributor is forced to
     // think before adding a new public action to the shell.
+    // The base Controller has no public constructor of its own, so
+    // IS_PUBLIC only reflects methods defined on the subclass: exactly
+    // one, `dashboard`. (An earlier revision of this test expected 2,
+    // counting a non-existent inherited __construct.)
     expect(count($reflection->getMethods(ReflectionMethod::IS_PUBLIC)))
-        ->toBe(2); // __construct (inherited) + dashboard
+        ->toBe(1);
 });
 
 it('LocaleController is the only path that mutates the locale cookie', function (): void {

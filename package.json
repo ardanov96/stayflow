@@ -4,8 +4,9 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "lint": "eslint resources/js",
+        "lint": "npm run lint:check && npm run lint:i18n",
         "lint:check": "eslint resources/js --max-warnings=0",
+        "lint:i18n": "node scripts/check-i18n-keys.mjs",
         "test:e2e": "playwright test"
     },
     "devDependencies": {

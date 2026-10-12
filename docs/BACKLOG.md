@@ -15,7 +15,7 @@ Statuses are tracked in the line starting with `Status:` under each task.
 ## P0 — Discovery & foundations (weeks 1–2)
 
 ### P0-01 Repository bootstrap and CI
-Deps: — · Size: M · Status: in-progress
+Deps: — · Size: M · Status: done
 - New Laravel app on current stable versions (pin and record), module skeleton from `AGENTS.md` §5, `declare(strict_types=1)`.
 - Pint, PHPStan/Larastan, Pest installed; `composer ci` runs format check, static analysis, architecture tests, tests.
 - GitHub Actions: runs `composer ci` and frontend lint/build on every PR; gitleaks and `composer audit` included.

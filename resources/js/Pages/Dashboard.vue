@@ -14,19 +14,23 @@ defineProps({
     },
 });
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
+// `statKey` is the exact key on the `stats` prop. It is declared explicitly
+// on each card so we do not have to translate between card id and stat name
+// at render time (a previous ternary chain here was broken and rendered
+// the wrong value for the in-house card).
 const cards = [
-    { id: 'arrivals', icon: '↓' },
-    { id: 'departures', icon: '↑' },
-    { id: 'in_house', icon: '◉' },
-    { id: 'occupancy', icon: '%' },
+    { id: 'arrivals', statKey: 'arrivals', icon: '↓' },
+    { id: 'departures', statKey: 'departures', icon: '↑' },
+    { id: 'in_house', statKey: 'inHouse', icon: '◉' },
+    { id: 'occupancy', statKey: 'occupancy', icon: '%' },
 ];
 
-const fmt = (value, locale) => {
+const fmt = (value, currentLocale) => {
     if (typeof value !== 'number') return '—';
-    if (locale === 'id') return new Intl.NumberFormat('id-ID').format(value);
-    if (locale === 'zh') return new Intl.NumberFormat('zh-CN').format(value);
+    if (currentLocale === 'id') return new Intl.NumberFormat('id-ID').format(value);
+    if (currentLocale === 'zh') return new Intl.NumberFormat('zh-CN').format(value);
     return new Intl.NumberFormat('en-US').format(value);
 };
 </script>
@@ -52,8 +56,7 @@ const fmt = (value, locale) => {
                         </h2>
                     </div>
                     <p class="mt-3 text-3xl font-semibold text-gray-900">
-                        {{ fmt(stats[card.id === '1' ? 'inHouse' : card.id === '4' ? 'occupancy' : card.id === '1' ? 'inHouse' : card.id.replace('_', '')], $i18n.locale) }}
-                        <span v-if="card.id === 'occupancy'" class="text-base font-medium text-gray-500">%</span>
+                        {{ fmt(stats[card.statKey], locale) }}<span v-if="card.id === 'occupancy'" class="text-base font-medium text-gray-500">%</span>
                     </p>
                 </div>
             </div>

@@ -30,6 +30,82 @@ A multi-tenant SaaS for hotels and villas:
 - **Stack:** Laravel modular monolith, MySQL 8, Redis, Vue 3 + Inertia, Filament back office.
 - **Gates:** M1 (wk 6) … M6 (wk 26). See `docs/ROADMAP.md`.
 
+## Local development
+
+The fastest path to a running app is `make setup` from the repo root — it builds Docker
+containers for `mysql`, `redis`, `mailpit`, `minio`, and the `laravel.test` app image, then
+runs migrations and seeders.
+
+### Prerequisites
+
+- Docker Desktop (or Docker Engine + Compose v2)
+- GNU Make
+- Git
+
+### One-shot setup
+
+```bash
+git clone https://github.com/ardanov96/stayflow.git
+cd stayflow
+make setup
+```
+
+`make setup` will:
+
+1. Copy `.env.sail` → `.env`
+2. `sail up -d` to start all containers in the background
+3. `sail artisan key:generate`
+4. `sail artisan migrate --seed`
+
+Once it finishes you can hit:
+
+| URL | What |
+|---|---|
+| http://localhost | Laravel app (Filament + Inertia) |
+| http://localhost:8025 | Mailpit UI (catches all outbound mail) |
+| http://localhost:9001 | MinIO console (S3 stand-in; default user/pass `stayflow` / `stayflow-dev-secret`) |
+
+### Useful commands
+
+```bash
+make up              # start containers
+make down            # stop containers
+make logs            # tail logs
+make shell           # shell into laravel.test
+make test            # full Pest suite
+make lint            # Pint auto-format
+make lint-check      # Pint --test (CI mode)
+make stan            # PHPStan / Larastan
+make ci              # lint-check + stan + test (the full pipeline)
+make migrate         # run outstanding migrations
+make fresh           # migrate:fresh --seed (DESTRUCTIVE)
+make reset           # down -v + setup (DESTRUCTIVE)
+make help            # show every target with its description
+```
+
+### Platform notes
+
+| OS | Notes |
+|---|---|
+| Linux | Works out of the box. Add your user to the `docker` group or use rootless Docker. |
+| macOS | Docker Desktop; if on Apple Silicon, Sail images include arm64 builds. |
+| Windows | **Use WSL2** (per BACKLOG P0-02 acceptance). Native Docker Desktop works but the recommended workflow is to run `make` inside the WSL2 distro where the repo lives. |
+
+### Native (no Docker) workflow
+
+If you can't use Docker (e.g. on a constrained laptop), copy `.env.example` to `.env`,
+point `DB_HOST` / `REDIS_HOST` / `MAIL_HOST` at your local services, and run:
+
+```bash
+make setup-native
+# or
+composer install
+php artisan key:generate
+php artisan migrate --seed
+```
+
+You still need MySQL 8, Redis, and (optionally) a local mail catcher running.
+
 ## Contents of this kit
 
 | File | Read it for |

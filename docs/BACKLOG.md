@@ -22,7 +22,7 @@ Deps: — · Size: M · Status: done
 - Acceptance: CI is green on the empty app; PR template with the Definition of Done checklist exists; `CODEOWNERS` set.
 
 ### P0-02 Local development environment
-Deps: P0-01 · Size: S · Status: todo
+Deps: P0-01 · Size: S · Status: in-progress
 - Docker Compose (or Sail): app, MySQL 8, Redis, Mailpit, S3-compatible store (MinIO). `make setup` creates a working local environment with seed data.
 - Acceptance: from a fresh clone, a new developer reaches a running app by following README only; works on Linux, macOS, and Windows with WSL2.
 

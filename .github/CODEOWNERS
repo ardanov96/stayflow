@@ -1,0 +1,24 @@
+# CODEOWNERS — default reviewer rules
+# One task per PR per AGENTS.md §4. At least one human approval is required for
+# changes to Inventory, Folio, Payments, Distribution, security, or migrations on
+# large tables (ENGINEERING_STANDARDS.md §8 rule 4).
+
+# Default owners for everything in this repo.
+*                           @stayflow/tech-lead
+
+# Modules where money / availability correctness is critical.
+/app/Modules/Inventory/    @stayflow/tech-lead
+/app/Modules/Folio/         @stayflow/tech-lead
+/app/Modules/Payments/      @stayflow/tech-lead
+/app/Modules/Distribution/  @stayflow/tech-lead
+/app/Modules/Reservations/   @stayflow/tech-lead
+
+# Database migrations on tenant tables.
+/database/migrations/         @stayflow/tech-lead
+
+# Security / auth / tenancy primitives.
+/app/Modules/Platform/      @stayflow/tech-lead
+/config/auth.php            @stayflow/tech-lead
+
+# Planning docs — anyone can propose changes; tech lead approves.
+/docs/                      @stayflow/tech-lead

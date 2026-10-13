@@ -14,8 +14,8 @@ namespace App\Support\Helpers;
  *
  * Two layers of scrubbing:
  *   - Value-based: regex matches on string values (message, context values).
- *     Catches emails, phone numbers, JWTs, and `key=value` / `key: value` /
- *     `"key": "value"` shaped credential assignments.
+ *     Catches emails, phone numbers, JWTs, and `key=value` / `key: value`
+ *     shaped credential assignments.
  *   - Key-based: a context key whose name contains a sensitive substring
  *     (password, token, secret, api_key, cookie, etc.) has its value replaced
  *     with "***" regardless of what the value actually is, because random
@@ -54,17 +54,22 @@ final class PiiScrubber
 
     public const PHONE_PATTERN = '/\+?\d[\d\s\-().]{7,}\d/';
 
-    // Allows an optional quote between the key name and the separator so
-    // JSON-shaped strings (`"api_key": "secret"`) are caught in addition to
-    // env-file / header shapes (`api_key=secret`, `Authorization: Bearer`).
-    public const CREDENTIAL_PATTERN = '/(?i)\b(api[_-]?key|access[_-]?token|auth[_-]?token|secret|password|passwd|token|bearer|authorization)\b\s*["\']?\s*[:=]\s*["\']?[^\s,;"\'<>&\x00-\x1F}]+/';
+    // Matches env-file and header shapes (`api_key=secret`, `Authorization: Bearer`).
+    // JSON-shaped messages (`"api_key": "secret"`) are NOT handled here because
+    // a single-pass replacement cannot preserve the surrounding quotes; that
+    // case is covered by the key-aware scrubbing in scrubArray() instead.
+    // Allows spaces inside the value (e.g. `Authorization: Bearer abc...`)
+    // but stops at newlines / structural delimiters so a single log line
+    // never over-matches into the next one. JSON-shaped messages
+    // (`"api_key": "secret"`) are deliberately not handled here.
+    public const CREDENTIAL_PATTERN = '/(?i)\b(api[_-]?key|access[_-]?token|auth[_-]?token|secret|password|passwd|token|bearer|authorization)\b\s*[:=]\s*[^,;"\'<>&\x00-\x1F}\n]+/';
 
     public const JWT_PATTERN = '/eyJ[A-Za-z0-9_\-]+\.eyJ[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+/';
 
     public static function scrubString(string $value): string
     {
-        $value = (string) preg_replace(self::JWT_PATTERN, '***.***', $value);
         $value = (string) preg_replace(self::CREDENTIAL_PATTERN, '$1=***', $value);
+        $value = (string) preg_replace(self::JWT_PATTERN, '***.***', $value);
         $value = (string) preg_replace(self::EMAIL_PATTERN, '***@***.***', $value);
         $value = (string) preg_replace(self::PHONE_PATTERN, '+***********', $value);
 

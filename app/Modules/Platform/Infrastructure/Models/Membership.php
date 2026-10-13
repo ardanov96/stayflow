@@ -28,9 +28,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Membership extends Model
 {
     /** @use HasFactory<MembershipFactory> */
-    use BelongsToTenant;
-
     use HasFactory;
+
+    use BelongsToTenant;
     use SoftDeletes;
 
     protected $fillable = [

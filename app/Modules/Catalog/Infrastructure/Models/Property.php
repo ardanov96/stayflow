@@ -23,7 +23,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Property extends Model
 {
     use BelongsToTenant;
-    use BelongsToTenant;
     use HasFactory;
     use SoftDeletes;
 

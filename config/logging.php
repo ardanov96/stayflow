@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Support\Logging\PiiScrubberProcessor;
+use App\Support\Logging\RequestIdProcessor;
+use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
@@ -105,6 +108,30 @@ return [
                 'stream' => 'php://stderr',
             ],
             'processors' => [PsrLogMessageProcessor::class],
+        ],
+
+        // Structured JSON Lines channel. Pairs Monolog's StreamHandler with the
+        // JsonFormatter, then runs the message through PiiScrubberProcessor
+        // (redacts PII) and RequestIdProcessor (promotes request_id to extra).
+        // Set LOG_CHANNEL=json to use. Default is still `stack`/`single` for
+        // backwards compatibility with stock Laravel output.
+        'json' => [
+            'driver' => 'monolog',
+            'level' => env('LOG_LEVEL', 'debug'),
+            'handler' => StreamHandler::class,
+            'with' => [
+                'stream' => storage_path('logs/stayflow.jsonl'),
+            ],
+            'formatter' => JsonFormatter::class,
+            'formatter_with' => [
+                'batchMode' => JsonFormatter::BATCH_MODE_NEWLINES,
+                'appendNewline' => true,
+            ],
+            'processors' => [
+                PsrLogMessageProcessor::class,
+                PiiScrubberProcessor::class,
+                RequestIdProcessor::class,
+            ],
         ],
 
         'syslog' => [

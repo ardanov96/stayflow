@@ -48,7 +48,7 @@ Deps: P0-01 · Size: M · Status: todo
 - Acceptance: merge to main deploys to staging; a deliberately failing health check rolls back automatically.
 
 ### P0-07 Error tracking and structured logging
-Deps: P0-01 · Size: S · Status: todo
+Deps: P0-01 · Size: S · Status: in-progress
 - Sentry wired for app and queue workers; JSON logs with `request_id`, `organization_id`, `property_id`; PII redaction helper.
 - Acceptance: a test exception appears in Sentry with context; logs contain no email/phone/token in sample runs.
 

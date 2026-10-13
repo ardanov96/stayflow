@@ -84,7 +84,7 @@ Deps: P0-01 · Size: S · Status: done
 ## P1 — Platform core & inventory engine (weeks 3–6)
 
 ### P1-01 Tenancy and isolation suite
-Deps: P0-01 · Size: L · Status: todo
+Deps: P0-01 · Size: L · Status: in-progress (branch `feat/p1-01-tenancy`)
 - Organizations, properties, `BelongsToTenant` global scope, tenant-aware queues/jobs, tenant-aware cache keys.
 - Isolation test helper that iterates every tenant table and proves cross-tenant read/update/delete is impossible via web, API, and jobs.
 - Acceptance: adding a tenant table without `organization_id` or without the scope fails a CI test.

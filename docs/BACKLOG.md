@@ -196,7 +196,7 @@ Deps: P1-01 · Size: S · Status: todo
 - Acceptance: updates to rates, reservations, and roles appear in the log; log entries cannot be edited via the app.
 
 ### P1-05 Money and tax primitives
-Deps: P0-01 · Size: M · Status: todo
+Deps: P0-01 · Size: M · Status: in-progress (branch `feat/p1-05-money`)
 - `Money` value object (minor units + currency), arithmetic with explicit rounding rules, tax/service-charge calculator (inclusive/exclusive, ordering).
 - Acceptance: property-based tests (no float use; add/subtract/allocate preserve totals); rounding rules documented in code and `docs/`.
 

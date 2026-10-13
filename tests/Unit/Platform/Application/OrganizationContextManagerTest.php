@@ -72,9 +72,9 @@ it('restores the stack on exception in without()', function (): void {
     $manager->swap($a, function () use ($manager): void {
         try {
             $manager->without(function (): void {
-                throw new \RuntimeException('boom');
+                throw new RuntimeException('boom');
             });
-        } catch (\RuntimeException) {
+        } catch (RuntimeException) {
             // expected: without() finally restored the stack to $a
         }
         // After the without() call (which threw), the outer context

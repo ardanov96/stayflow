@@ -12,6 +12,7 @@ use App\Modules\Platform\Infrastructure\Models\Membership;
 use App\Modules\Platform\Infrastructure\Models\Organization;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\TenantContextRecordingJob;
 
 uses(RefreshDatabase::class);
 
@@ -27,7 +28,6 @@ uses(RefreshDatabase::class);
  * rows visible to the right caller. Any test that produces the wrong
  * rows (or fails to reject the wrong rows) is a security regression.
  */
-
 beforeEach(function (): void {
     $this->orgA = Organization::factory()->create();
     $this->orgB = Organization::factory()->create();
@@ -130,13 +130,13 @@ it('TenantCache namespaces by organization: org A cannot see org B keys', functi
 // --- Job surface ----------------------------------------------------------
 
 it('a job dispatched under org A context runs with org A context', function (): void {
-    $sentinel = new stdClass();
+    $sentinel = new stdClass;
     $sentinel->observed = null;
 
-    $job = new \Tests\Support\TenantContextRecordingJob(TenantContext::forOrganization(123));
+    $job = new TenantContextRecordingJob(TenantContext::forOrganization(123));
     dispatch($job);
 
-    expect(\Tests\Support\TenantContextRecordingJob::$lastObserved)->toBe(['org_id' => 123, 'property_id' => null]);
+    expect(TenantContextRecordingJob::$lastObserved)->toBe(['org_id' => 123, 'property_id' => null]);
 });
 
 // --- HTTP surface ---------------------------------------------------------

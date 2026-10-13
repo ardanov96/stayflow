@@ -39,8 +39,8 @@ class TenantContextRecordingJob implements ShouldQueue
     {
         $current = app(OrganizationContext::class)->current();
         self::$lastObserved = [
-            "org_id" => $current?->organizationId,
-            "property_id" => $current?->propertyId,
+            'org_id' => $current?->organizationId,
+            'property_id' => $current?->propertyId,
         ];
     }
 

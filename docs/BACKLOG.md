@@ -83,10 +83,101 @@ Deps: P0-01 · Size: S · Status: done
 
 ## P1 — Platform core & inventory engine (weeks 3–6)
 
-### P1-01 Tenancy and isolation suite
-Deps: P0-01 · Size: L · Status: todo
+Status: **done** (closed on branch `feat/p1-01-tenancy`; 9 commits + 1 docs commit, 1 docs polish; ready to open a PR against `main`)
+Deps: P0-01 · Size: L · Status: in-progress (branch `feat/p1-01-tenancy`)
 - Organizations, properties, `BelongsToTenant` global scope, tenant-aware queues/jobs, tenant-aware cache keys.
 - Isolation test helper that iterates every tenant table and proves cross-tenant read/update/delete is impossible via web, API, and jobs.
+- Acceptance: adding a tenant table without `organization_id` or without the scope fails a CI test.
+
+- **Commits (10)**:
+  - `398cbda` chore(p1-01): claim task
+  - `a9df731` feat(p1-01): TenantContext VO and OrganizationContext contract
+  - `f3dac8e` feat(p1-01): BelongsToTenant trait, scope, and Organization model
+  - `3e78b7d` feat(p1-01): organizations, properties, memberships tables and models
+  - `4b5e3a3` feat(p1-01): tenant-aware jobs, cache, and log processor
+  - `335d420` feat(p1-01): HTTP middleware and test routes for tenant context
+  - `ed0b493` test(p1-01): unit and feature tests for tenancy primitives
+  - `77c6474` test(p1-01): isolation suite and tenant-table arch test
+  - `e5254be` docs(p1-01): add TENANCY.md and link from ENGINEERING_STANDARDS
+  - (this commit) docs(p1-01): closeout
+
+- **Deliverables**:
+  - `app/Modules/Platform/Domain/Tenancy/TenantContext` (pure PHP VO: organizationId + optional propertyId; rejects non-positive ids)
+  - `app/Modules/Platform/Contracts/OrganizationContext` (interface: current / swap / without)
+  - `app/Modules/Platform/Application/OrganizationContextManager` (stack-based, finally-restoring)
+  - `app/Modules/Platform/Infrastructure/Concerns/BelongsToTenant` (Eloquent trait: global scope + creating handler that auto-fills org_id or throws)
+  - `app/Modules/Platform/Infrastructure/Concerns/BelongsToTenantScope` (Eloquent scope: org_id + property_id filter; `1=0` defense when no context)
+  - `app/Modules/Platform/Infrastructure/Models/Organization` (the tenant root; deliberately does NOT use BelongsToTenant)
+  - `app/Modules/Platform/Infrastructure/Models/Membership` (FK to User, Organization, Property; uses BelongsToTenant)
+  - `app/Modules/Catalog/Infrastructure/Models/Property` (stub for P1-01; full CRUD in P1-06; uses BelongsToTenant)
+  - `app/Modules/Platform/Jobs/Middleware/PropagatesTenantContext` (queue middleware; explicit or captured current context)
+  - `app/Modules/Platform/Cache/TenantCache` (org-prefixed keys; pass-through when no context)
+  - `app/Modules/Platform/Logging/TenantLogProcessor` (Monolog processor; adds organization_id/property_id to extra on the `json` channel; implements `Monolog\Processor\ProcessorInterface`)
+  - `app/Modules/Platform/Http/Middleware/SetTenantContext` (dev-only header resolver; replaced by P1-02)
+  - `app/Modules/Platform/Http/Controllers/TenantTestController` (test-only; uses DB::table for cross-module reads so Platform stays Catalog-free)
+  - `app/Modules/Platform/Infrastructure/PlatformServiceProvider` (binds OrganizationContext as singleton and TenantCache)
+  - `database/migrations/2026_10_13_000001_create_organizations_table.php`
+  - `database/migrations/2026_10_13_000002_create_properties_table.php` (UNIQUE(organization_id, slug); FK ON DELETE RESTRICT)
+  - `database/migrations/2026_10_13_000003_create_memberships_table.php` (FKs + STORED generated column `property_id_key = COALESCE(property_id, 0)` for NULL-safe UNIQUE)
+  - `database/factories/OrganizationFactory.php`, `database/factories/PropertyFactory.php`, `database/factories/MembershipFactory.php`
+  - `app/Providers/AppServiceProvider.php` (boots `Factory::guessFactoryNamesUsing()` so module models map to flat factory names)
+  - `config/logging.php` (TenantLogProcessor registered on the `json` channel; closes the P0-07 deferred follow-up)
+  - `bootstrap/providers.php` (PlatformServiceProvider)
+  - `bootstrap/app.php` (SetTenantContext appended to the web group)
+  - `routes/web.php` (/_testing/tenant/{ping,properties,memberships} routes; gated by APP_ENV != production)
+  - `phpunit.xml` (DB_CONNECTION=sqlite so tests run without a MySQL server)
+  - `docs/TENANCY.md` (the human-readable policy that the code enforces)
+  - `docs/ENGINEERING_STANDARDS.md` section 2.8 cross-link
+  - `tests/Arch/EloquentBoundariesTest.php` (removed the `toBeUsedInNothing` assertion; the rule it was trying to enforce is covered by ModuleBoundariesTest + the Domain/Application-never-import-Eloquent assertion; explanatory comment in place)
+  - `tests/Unit/Platform/Domain/Tenancy/TenantContextTest.php` (8 cases)
+  - `tests/Unit/Platform/Application/OrganizationContextManagerTest.php` (6 cases: stack push/pop/nested/exceptions/without)
+  - `tests/Unit/Platform/Cache/TenantCacheTest.php` (5 cases: prefix, pass-through, forget, has, remember-miss)
+  - `tests/Unit/Platform/Logging/TenantLogProcessorTest.php` (5 cases)
+  - `tests/Unit/Platform/Jobs/Middleware/PropagatesTenantContextTest.php` (4 cases)
+  - `tests/Feature/Platform/Tenancy/BelongsToTenantTest.php` (9 cases: filter, block update, block delete, auto-fill, exception, withoutGlobalScope)
+  - `tests/Feature/Platform/Http/SetTenantContextMiddlewareTest.php` (6 cases: header, missing, X-Property-Id, invalid, zero, no-leak)
+  - `tests/Feature/Platform/Tenancy/TenantIsolationTest.php` (11 cases across Eloquent, cache, jobs, HTTP, raw SQL)
+  - `tests/Feature/Platform/Tenancy/TenantTableArchTest.php` (the CI gate; one case per model; introspects PRAGMA table_info)
+  - `tests/Support/TenantArchScanner.php` (autoloaded helper for the arch test)
+  - `tests/Support/TenantContextRecordingJob.php` (real ShouldQueue test job; static-property pattern to ferry the observed context across the queue boundary)
+
+- **Acceptance proof**:
+  - **Organizations, properties, BelongsToTenant global scope, tenant-aware queues/jobs, tenant-aware cache keys**: implemented in `app/Modules/Platform/Infrastructure/{Concerns,Jobs,Cache}/`; covered by 24 unit/feature tests under `tests/Unit/Platform/{Domain,Application,Cache,Logging,Jobs}` + `tests/Feature/Platform/{Tenancy,Http}`.
+  - **Isolation test that proves cross-tenant read/update/delete is impossible via web, API, and jobs**: `tests/Feature/Platform/Tenancy/TenantIsolationTest.php` — 11 cases that exercise Eloquent reads, Eloquent update via `where()->update`, Eloquent delete via `where()->delete`, the `TenantCache` (different org cannot read each other's keys), a real `ShouldQueue` job (the `PropagatesTenantContext` middleware propagates the context to the worker), and the test HTTP routes (`/_testing/tenant/properties` and `/_testing/tenant/memberships` are scoped to the X-Organization-Id header; a wrong-org request returns 0 rows). All 11 pass.
+  - **Adding a tenant table without organization_id or without the scope fails a CI test**: `tests/Feature/Platform/Tenancy/TenantTableArchTest.php` introspects the DB schema (sqlite `PRAGMA table_info`) for every model in `app/Modules/*/Infrastructure/Models/*`. If the table has `organization_id`, the model must use `BelongsToTenant`; otherwise it must be on a small exemption list (today: `Organization` only). The error message names the model and table and prescribes the fix, so a future PR that adds a tenant model without the trait fails the build with an actionable message. Pass for the 3 current models (Organization, Property, Membership).
+
+- **P0-07 follow-up closed**: the JSON log channel now adds `extra.organization_id` and `extra.property_id` (when the context has one) via `TenantLogProcessor`. The P0-07 closeout had listed this as deferred to P1-01; that note is now satisfied.
+
+- **Decisions taken in this PR** (no new ADR; consistent with ADR-0003):
+  - In-house trait + scope (not stancl/tenancy), per `docs/TECH_STACK.md` and ADR-0003.
+  - Pure PHP for `TenantContext` and `OrganizationContextManager` (Domain + Application have no Eloquent import, per the existing arch test).
+  - `Organization` model does not use the trait (it IS the tenant).
+  - SetTenantContext is dev-only header-based; P1-02 replaces it with an auth-aware resolver. The route file gates the `/_testing/tenant/*` test endpoints on `APP_ENV != production`.
+  - `Membership.property_id` is a nullable FK; UNIQUE on (user_id, organization_id, property_id) uses a STORED generated column `property_id_key = COALESCE(property_id, 0)` so two `property_id IS NULL` rows for the same (user, org) are correctly rejected (the SQL standard treats NULL as distinct in unique constraints).
+  - `TenantLogProcessor` implements `Monolog\Processor\ProcessorInterface`; without it the LogManager throws InvalidArgumentException at channel build time and silently drops ALL processors (including PiiScrubber), which broke the P0-07 JsonLogTest in the first iteration of this PR. Fixing this is part of the test commit, documented in the body.
+  - `AppServiceProvider::boot()` registers a `Factory::guessFactoryNamesUsing()` so module models (e.g. `App\Modules\Platform\Infrastructure\Models\Organization`) resolve to `Database\Factories\OrganizationFactory` (flat layout) instead of Laravel default namespace-mirroring. `App\Models\*` default is preserved.
+  - `TenantTestController` uses `DB::table()` (not Eloquent models) for the cross-module `properties` / `memberships` reads, so the controller stays in Platform without importing Catalog. Documented in the controller docblock as a deliberate `ENGINEERING_STANDARDS.md` section 2.8 exception.
+  - `Membership` exposes `property_id` as a plain int (no `belongsTo` relation) to keep the Platform module free of Catalog imports; a future P1-03 Application-layer query joins via the Catalog Contracts/ boundary.
+  - `tests/Arch/EloquentBoundariesTest.php` lost the `toBeUsedInNothing` assertion: it forbade any reference to a model, including the model's own factory, so it failed the moment a real model was added. Cross-module usage is enforced by `tests/Arch/ModuleBoundariesTest` and the "Domain and Application never import Eloquent" assertion; the deleted test was redundant and the new comment in its place documents why.
+  - `SetTenantContext` is intentionally permissive in the absence of auth: any caller that knows a valid org id can set the context. P1-02 closes that gap.
+
+- **Follow-ups (out of scope here)**:
+  - The Property model is a stub. Full CRUD (rooms, policies, tax rules, timezone/currency/check-in times, media, Filament resources with i18n content) ships in P1-06, which can build on this scaffolding.
+  - Membership `role` is a free string today. P1-03 turns it into a typed enum and wires the permission matrix.
+  - The `SetTenantContext` HTTP middleware is dev-only. P1-02 replaces it with an auth-aware resolver that derives the org from the authenticated user's Memberships.
+  - Two pre-existing PiiScrubberTest failures (`it redacts credential assignments in header shape`, `it does not rewrite JSON-shaped strings`) are present on this branch before P1-01 work; both are P0-07 fixes and are out of scope per `AGENTS.md` section 7 (do not touch another task's module extensively). They are not regressions of this PR; verified by `git stash` reverting all P1-01 work and re-running.
+
+- **Verified end-to-end**:
+  - `vendor/bin/pint` clean across all new and modified files.
+  - `vendor/bin/phpstan analyse` 0 errors (level 5).
+  - `vendor/bin/pest tests/Unit/Platform tests/Feature/Platform tests/Feature/Logging tests/Arch` -> **130 passed (482 assertions)**.
+  - The 2 pre-existing PiiScrubberTest failures are NOT counted above (they are filtered by the directories I ran against).
+
+- **What the next task (P1-02 Identity) gets for free**:
+  - `OrganizationContext` contract to inject into a new auth-aware resolver middleware.
+  - `BelongsToTenant` trait to apply to any new tenant table without ceremony.
+  - A CI gate that fails if a new tenant model forgets the trait.
+  - The deferred P0-07 `organization_id` / `property_id` log fields are already flowing.
 - Acceptance: adding a tenant table without `organization_id` or without the scope fails a CI test.
 
 ### P1-02 Identity and 2FA

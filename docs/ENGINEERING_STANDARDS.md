@@ -27,6 +27,13 @@ Applies to humans and AI agents alike. Where a rule says "CI enforces", a failin
 7. **Enums** for closed sets (statuses, types), backed by strings; never magic strings.
 8. **Tenant scoping:** every model on tenant tables uses `BelongsToTenant`; raw SQL must include the tenant condition (reviewed explicitly).
 
+    The full model is in `docs/TENANCY.md` (hierarchy, scope behavior, the 1=0
+    defense-in-depth default, the test surface, and the dev-only header
+    resolver that P1-02 replaces). The trait, scope, context stack, queue
+    middleware, cache wrapper, and log processor all live in
+    `app/Modules/Platform/*` and are wired by `PlatformServiceProvider`.
+    The CI gate is `tests/Feature/Platform/Tenancy/TenantTableArchTest`:
+    adding a tenant model without the trait fails the build.
 ## 3. HTTP and API conventions
 
 1. Validation in FormRequests; reject unknown fields on public API.

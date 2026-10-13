@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Platform\Logging\TenantLogProcessor;
 use App\Support\Logging\PiiScrubberProcessor;
 use App\Support\Logging\RequestIdProcessor;
 use Monolog\Formatter\JsonFormatter;
@@ -131,6 +132,7 @@ return [
                 PsrLogMessageProcessor::class,
                 PiiScrubberProcessor::class,
                 RequestIdProcessor::class,
+                TenantLogProcessor::class,
             ],
         ],
 

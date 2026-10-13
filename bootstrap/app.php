@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\SetLocale;
+use App\Modules\Platform\Http\Middleware\SetTenantContext;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             AssignRequestId::class,
             SetLocale::class,
+            SetTenantContext::class,
         ]);
         // The `locale` cookie is non-sensitive and is set/read by both
         // LocaleController (PHP) and LocaleSwitcher (browser). Keeping it

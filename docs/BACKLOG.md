@@ -37,9 +37,10 @@ Deps: — · Size: M · Status: todo
 - Acceptance: three ADRs moved from `proposed` to `accepted`, sandbox credentials available to the team (never committed).
 
 ### P0-05 UI shell, design tokens, i18n scaffolding
-Deps: P0-01 · Size: M · Status: todo
+Deps: P0-01 · Size: M · Status: done
 - Inertia + Vue 3 + Tailwind layout (sidebar, property switcher, locale switcher), design tokens, base components, `id`/`en`/`zh` translations with a missing-key CI check.
 - Acceptance: all UI strings come from lang files; Playwright smoke test loads the shell in both locales; keyboard navigation works for the main layout.
+- Closed on `chore/p0-05-closeout`: 79/79 Pest, Pint clean, PHPStan 0 errors, ESLint 0 warnings, Playwright green in `en`/`id`/`zh`, missing-key i18n parity check wired into `npm run lint`.
 
 ### P0-06 Staging environment and deployment pipeline
 Deps: P0-01 · Size: M · Status: todo

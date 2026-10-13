@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,9 +13,19 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware) {
-        //
+    ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [
+            SetLocale::class,
+        ]);
+        // The `locale` cookie is non-sensitive and is set/read by both
+        // LocaleController (PHP) and LocaleSwitcher (browser). Keeping it
+        // plaintext means the e2e Playwright suite can pre-seed it without
+        // having to roundtrip through the encrypted Laravel cookie protocol,
+        // and the value is just a 2-letter code (id/en/zh).
+        $middleware->encryptCookies(except: [
+            'locale',
+        ]);
     })
-    ->withExceptions(function (Exceptions $exceptions) {
+    ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

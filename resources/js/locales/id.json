@@ -1,0 +1,58 @@
+{
+    "app": {
+        "name": "Stayflow",
+        "tagline": "Operasional hospitality, otomatis"
+    },
+    "shell": {
+        "sidebar": {
+            "brand": "Stayflow",
+            "nav_label": "Navigasi utama",
+            "nav": {
+                "dashboard": "Dasbor",
+                "reservations": "Reservasi",
+                "inventory": "Inventaris",
+                "calendar": "Kalender",
+                "guests": "Tamu",
+                "reports": "Laporan",
+                "settings": "Pengaturan"
+            },
+            "footer": {
+                "version": "Versi",
+                "tag": "Bangun MVP"
+            }
+        },
+        "topbar": {
+            "search_placeholder": "Cari tamu, reservasi, kamar…",
+            "property_placeholder": "Pilih properti",
+            "locale_label": "Bahasa",
+            "user_menu": "Menu akun"
+        },
+        "dashboard": {
+            "title": "Dasbor operasional",
+            "subtitle": "Ringkasan hari ini: kedatangan, keberangkatan, serta status housekeeping.",
+            "kpi_label": "Indikator kinerja utama",
+            "card_arrivals": "Kedatangan hari ini",
+            "card_departures": "Keberangkatan hari ini",
+            "card_in_house": "Tamu menginap",
+            "card_occupancy": "Okupansi",
+            "empty_title": "Belum ada data langsung",
+            "empty_body": "Hubungkan properti di Pengaturan untuk mulai menerima reservasi.",
+            "cta_settings": "Buka pengaturan"
+        },
+        "common": {
+            "skip_to_main": "Lewati ke konten utama",
+            "open_menu": "Buka menu",
+            "close_menu": "Tutup menu",
+            "search": "Cari",
+            "loading": "Memuat…",
+            "save": "Simpan",
+            "cancel": "Batal",
+            "back": "Kembali"
+        },
+        "locales": {
+            "id": "Bahasa Indonesia",
+            "en": "English",
+            "zh": "中文"
+        }
+    }
+}

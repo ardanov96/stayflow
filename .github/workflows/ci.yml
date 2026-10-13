@@ -83,6 +83,43 @@ jobs:
         run: npm run build
         if: always()
 
+      - name: Install Playwright browser
+        run: npx playwright install chromium --with-deps
+        if: always()
+
+      - name: Start Laravel server (background) for e2e
+        env:
+          SESSION_DRIVER: array
+          CACHE_STORE: array
+          QUEUE_CONNECTION: sync
+        run: |
+          php artisan serve --host=127.0.0.1 --port=8000 > /tmp/laravel.log 2>&1 &
+          echo $! > /tmp/laravel.pid
+          for i in $(seq 1 30); do
+            if curl -fs http://127.0.0.1:8000/up > /dev/null; then
+              echo "Laravel server is up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Laravel server failed to start within 30s"
+          cat /tmp/laravel.log
+          exit 1
+        if: always()
+
+      - name: Playwright e2e (P0-05 shell)
+        env:
+          SESSION_DRIVER: array
+          CACHE_STORE: array
+          QUEUE_CONNECTION: sync
+          E2E_BASE_URL: http://127.0.0.1:8000
+        run: npx playwright test
+        if: always()
+
+      - name: Stop Laravel server
+        if: always()
+        run: kill $(cat /tmp/laravel.pid) 2>/dev/null || true
+
   secret-scan:
     name: gitleaks
     runs-on: ubuntu-latest

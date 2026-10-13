@@ -1,0 +1,58 @@
+{
+    "app": {
+        "name": "Stayflow",
+        "tagline": "Hospitality operations, on autopilot"
+    },
+    "shell": {
+        "sidebar": {
+            "brand": "Stayflow",
+            "nav_label": "Primary navigation",
+            "nav": {
+                "dashboard": "Dashboard",
+                "reservations": "Reservations",
+                "inventory": "Inventory",
+                "calendar": "Calendar",
+                "guests": "Guests",
+                "reports": "Reports",
+                "settings": "Settings"
+            },
+            "footer": {
+                "version": "Version",
+                "tag": "MVP build"
+            }
+        },
+        "topbar": {
+            "search_placeholder": "Search guests, reservations, rooms…",
+            "property_placeholder": "Select a property",
+            "locale_label": "Language",
+            "user_menu": "Account menu"
+        },
+        "dashboard": {
+            "title": "Operations dashboard",
+            "subtitle": "Today's snapshot of arrivals, departures and house status.",
+            "kpi_label": "Key performance indicators",
+            "card_arrivals": "Today's arrivals",
+            "card_departures": "Today's departures",
+            "card_in_house": "In-house guests",
+            "card_occupancy": "Occupancy",
+            "empty_title": "No live data yet",
+            "empty_body": "Connect a property in Settings to start receiving reservations.",
+            "cta_settings": "Open settings"
+        },
+        "common": {
+            "skip_to_main": "Skip to main content",
+            "open_menu": "Open menu",
+            "close_menu": "Close menu",
+            "search": "Search",
+            "loading": "Loading…",
+            "save": "Save",
+            "cancel": "Cancel",
+            "back": "Back"
+        },
+        "locales": {
+            "id": "Bahasa Indonesia",
+            "en": "English",
+            "zh": "中文"
+        }
+    }
+}

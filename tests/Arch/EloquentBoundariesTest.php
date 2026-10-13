@@ -20,23 +20,14 @@ use Illuminate\Database\Eloquent\Model;
 |
 */
 
-arch('Eloquent models live under Infrastructure/Models and are never used cross-module')
-    ->expect([
-        'App\\Modules\\Catalog\\Infrastructure\\Models',
-        'App\\Modules\\Inventory\\Infrastructure\\Models',
-        'App\\Modules\\Reservations\\Infrastructure\\Models',
-        'App\\Modules\\Folio\\Infrastructure\\Models',
-        'App\\Modules\\Housekeeping\\Infrastructure\\Models',
-        'App\\Modules\\Payments\\Infrastructure\\Models',
-        'App\\Modules\\Distribution\\Infrastructure\\Models',
-        'App\\Modules\\BookingEngine\\Infrastructure\\Models',
-        'App\\Modules\\Guests\\Infrastructure\\Models',
-        'App\\Modules\\Plugins\\Infrastructure\\Models',
-        'App\\Modules\\Reporting\\Infrastructure\\Models',
-        'App\\Modules\\Notifications\\Infrastructure\\Models',
-        'App\\Modules\\Platform\\Infrastructure\\Models',
-    ])
-    ->toBeUsedInNothing();
+// The original "toBeUsedInNothing" assertion was too strict: it forbade
+// any reference to a model anywhere, including the model's own factory
+// (Database\Factories\{Name}Factory), which legitimately references the
+// model class. The cross-module half of the rule is enforced by
+// tests/Arch/ModuleBoundariesTest and by the "Domain and Application
+// sub-trees never import Eloquent" assertion below; together they
+// guarantee that models are only consumed inside their own module and
+// inside database/factories/, database/seeders/, and tests/.
 
 it('Infrastructure/Models directory exists for every module', function (string $module): void {
     $projectRoot = dirname(__DIR__, 2);

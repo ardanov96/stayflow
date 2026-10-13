@@ -6,6 +6,7 @@ namespace App\Modules\Platform\Logging;
 
 use App\Modules\Platform\Contracts\OrganizationContext;
 use Monolog\LogRecord;
+use Monolog\Processor\ProcessorInterface;
 
 /**
  * Monolog processor that promotes the active tenant ids into every
@@ -27,7 +28,7 @@ use Monolog\LogRecord;
  * Tenant ids are integers and never contain PII, so the
  * PiiScrubberProcessor is not involved here.
  */
-final class TenantLogProcessor
+final class TenantLogProcessor implements ProcessorInterface
 {
     public function __construct(private readonly OrganizationContext $context) {}
 

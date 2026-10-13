@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Money;
 
 /**
- * One applied tax on a {@see \App\Support\Money\TaxBreakdown}.
+ * One applied tax on a {@see TaxBreakdown}.
  *
  * `inclusive = true` means the amount is already inside the subtotal
  * (extracted for reporting only). `inclusive = false` means the amount

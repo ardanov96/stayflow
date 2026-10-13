@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 use App\Support\Money\Exception\CurrencyMismatchException;
 use App\Support\Money\Money;
-use Brick\Math\Exception\NumberFormatException;
-use Brick\Money\Exception\UnknownCurrencyException;
 use Brick\Math\RoundingMode;
+use Brick\Money\Exception\UnknownCurrencyException;
 
 it('ofMinor stores amount and currency code', function (): void {
     $m = Money::ofMinor(1_234, 'IDR');

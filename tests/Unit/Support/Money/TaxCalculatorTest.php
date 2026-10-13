@@ -3,14 +3,13 @@
 declare(strict_types=1);
 
 use App\Support\Money\Money;
-use App\Support\Money\TaxAppliesTo;
 use App\Support\Money\TaxCalculator;
 use App\Support\Money\TaxKind;
 use App\Support\Money\TaxRule;
 use Brick\Math\RoundingMode;
 
 beforeEach(function (): void {
-    $this->calc = new TaxCalculator();
+    $this->calc = new TaxCalculator;
 });
 
 it('with no rules returns an empty breakdown whose total equals the subtotal', function (): void {

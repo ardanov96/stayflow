@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Money;
 
 use Brick\Math\RoundingMode;
+use InvalidArgumentException;
 
 /**
  * Tax or service-charge rule.
@@ -39,12 +40,12 @@ final readonly class TaxRule
         public RoundingMode $roundingMode = RoundingMode::HALF_EVEN,
     ) {
         if ($rateBps < 0) {
-            throw new \InvalidArgumentException('TaxRule rateBps cannot be negative.');
+            throw new InvalidArgumentException('TaxRule rateBps cannot be negative.');
         }
         if ($rateBps > 1_000_000) {
             // 10_000 % is already nonsense for a tax; bound the input to
             // catch data-entry mistakes early.
-            throw new \InvalidArgumentException('TaxRule rateBps cannot exceed 1_000_000 (10000 %).');
+            throw new InvalidArgumentException('TaxRule rateBps cannot exceed 1_000_000 (10000 %).');
         }
     }
 

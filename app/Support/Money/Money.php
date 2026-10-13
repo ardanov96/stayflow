@@ -17,18 +17,18 @@ use Stringable;
  * Money value object.
  *
  * Every amount is stored as an integer in the currency's minor units
- * (e.g. cents for USD; for IDR the major unit IS the minor unit).
- * The {@see \Brick\Money\Currency} ISO 4217 code accompanies every value.
+ * (e.g. cents for USD; for IDR the major unit IS the minor unit per
+ * brick/money's ISO 4217 read of the currency). The ISO 4217 currency
+ * code accompanies every value.
  *
  * Rounding default is HALF_EVEN (banker's rounding). Callers may pass
- * a different {@see \Brick\Math\RoundingMode} per operation when the
- * domain requires it (e.g. tax on cash payments may use HALF_UP per
- * local regulation).
+ * a different RoundingMode per operation when the domain requires it
+ * (e.g. tax on cash payments may use HALF_UP per local regulation).
  *
- * Float amounts are rejected at the type level: construct from an integer
- * minor count ({@see self::ofMinor()}) or a decimal string
- * ({@see self::of()}). Allocation is exact (no rounding loss): the sum of
- * the parts always equals the source.
+ * Float amounts are rejected at the type level: construct from an
+ * integer minor count (ofMinor()) or a decimal string (of()).
+ * Allocation is exact (no rounding loss): the sum of the parts always
+ * equals the source.
  *
  * See docs/MONEY.md for the project's full money policy.
  */
@@ -62,7 +62,7 @@ final readonly class Money implements Stringable
     public static function of(string|int $amount, BrickCurrency|string $currency): self
     {
         $code = self::currencyCodeOf($currency);
-        $brick = BrickMoney::of((string) $amount, $code, new DefaultContext());
+        $brick = BrickMoney::of((string) $amount, $code, new DefaultContext);
 
         return new self(self::brickToMinor($brick), $code);
     }
@@ -92,8 +92,8 @@ final readonly class Money implements Stringable
 
     /**
      * Multiply by a decimal factor. Rounding defaults to HALF_EVEN
-     * (banker's rounding); pass a different {@see \Brick\Math\RoundingMode}
-     * when the domain requires it (e.g. tax on cash uses HALF_UP).
+     * (banker's rounding); pass a different RoundingMode when the
+     * domain requires it (e.g. tax on cash uses HALF_UP).
      */
     public function multipliedBy(string|int $multiplier, RoundingMode $roundingMode = self::DEFAULT_ROUNDING_MODE): self
     {
@@ -144,16 +144,16 @@ final readonly class Money implements Stringable
         $ratios = array_fill(0, $parts, 1);
         $allocated = $this->toBrick()->allocate(...$ratios);
 
-        return array_values(array_map(
+        return array_map(
             static fn (BrickMoney $m): self => new self(self::brickToMinor($m), $m->getCurrency()->getCurrencyCode()),
             $allocated
-        ));
+        );
     }
 
     /**
      * Split into the requested target minor units. The sum of the targets
      * MUST equal the source amountMinor; this is verified and an
-     * {@see \InvalidArgumentException} is thrown otherwise.
+     * InvalidArgumentException is thrown otherwise.
      *
      * @param  list<int>  $targets
      * @return list<self>
@@ -173,10 +173,10 @@ final readonly class Money implements Stringable
         }
         $code = $this->currencyCode;
 
-        return array_values(array_map(
+        return array_map(
             static fn (int $t): self => new self($t, $code),
             $targets
-        ));
+        );
     }
 
     // ---------------------------------------------------------------------
@@ -237,7 +237,7 @@ final readonly class Money implements Stringable
     // ---------------------------------------------------------------------
 
     /**
-     * Render in the given locale (requires the `intl` PHP extension).
+     * Render in the given locale (requires the intl PHP extension).
      */
     public function format(string $locale = 'en'): string
     {
@@ -298,16 +298,13 @@ final readonly class Money implements Stringable
     }
 
     /**
-     * Convert a {@see BrickMoney} to the integer minor-unit count for its currency.
+     * Convert a BrickMoney to the integer minor-unit count for its currency.
      *
      * brick/money stores amounts in the currency's major units (e.g. 10.00
      * for $10.00). Multiplying by 10^fractionDigits converts the major-unit
-     * amount into the integer minor-unit count we keep on this value object.
-     *
-     * BigInteger math is used (no floats) so values up to 2^63 minor units
-     * stay exact; values beyond that exceed PHP_INT_MAX and the cast to int
-     * will wrap, which is detected by callers via {@see self::isZero()} or
-     * the underlying {@see \Brick\Math\BigNumber} API.
+     * amount into the integer minor-unit count we keep on this value
+     * object. BigInteger math is used (no floats) so values up to 2^63
+     * minor units stay exact; values beyond that exceed PHP_INT_MAX.
      */
     private static function brickToMinor(BrickMoney $brick): int
     {

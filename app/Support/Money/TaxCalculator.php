@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace App\Support\Money;
 
-use App\Support\Money\Exception\CurrencyMismatchException;
-
 /**
- * Applies a set of {@see \App\Support\Money\TaxRule}s to a money subtotal
- * and returns a {@see \App\Support\Money\TaxBreakdown}.
+ * Applies a set of {@see TaxRule}s to a money subtotal
+ * and returns a {@see TaxBreakdown}.
  *
  * Algorithm:
  *  1. Sort rules by `order` ascending; ties keep insertion order.

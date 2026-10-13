@@ -7,7 +7,7 @@ namespace App\Support\Money;
 use App\Support\Money\Exception\CurrencyMismatchException;
 
 /**
- * Result of applying a set of {@see \App\Support\Money\TaxRule}s to a
+ * Result of applying a set of {@see TaxRule}s to a
  * subtotal. Carries the subtotal, the final total (subtotal plus
  * exclusive taxes), and a line-by-line breakdown.
  *

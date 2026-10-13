@@ -25,7 +25,7 @@ class OrganizationFactory extends Factory
             // Unique per call: 6 random alphanumerics + 4-digit suffix.
             // Faker's unique() tracker resets between test processes, so
             // collisions across the test suite are not a concern.
-            'slug' => Str::lower(Str::random(6)) . '-' . fake()->unique()->numberBetween(1000, 9999),
+            'slug' => Str::lower(Str::random(6)).'-'.fake()->unique()->numberBetween(1000, 9999),
             'status' => 'active',
             'default_locale' => 'en',
             'settings' => [],

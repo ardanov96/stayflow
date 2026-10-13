@@ -3,6 +3,7 @@
     "rules": {
         "declare_strict_types": true,
         "no_unused_imports": true,
+        "ordered_traits": false,
         "ordered_imports": {
             "sort_algorithm": "alpha",
             "imports_order": [

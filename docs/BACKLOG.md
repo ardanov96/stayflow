@@ -48,9 +48,21 @@ Deps: P0-01 · Size: M · Status: todo
 - Acceptance: merge to main deploys to staging; a deliberately failing health check rolls back automatically.
 
 ### P0-07 Error tracking and structured logging
-Deps: P0-01 · Size: S · Status: in-progress
-- Sentry wired for app and queue workers; JSON logs with `request_id`, `organization_id`, `property_id`; PII redaction helper.
-- Acceptance: a test exception appears in Sentry with context; logs contain no email/phone/token in sample runs.
+Deps: P0-01 · Size: S · Status: done (closeout `0446430`, 7 commits on `feat/p0-07-sentry-logging`)
+- **Sentry**: `sentry/sentry-laravel ^4.29` installed; auto-discovered by Laravel; reads `SENTRY_LARAVEL_DSN`, `SENTRY_ENVIRONMENT`, `SENTRY_RELEASE`, `SENTRY_TRACES_SAMPLE_RATE`, `SENTRY_PROFILES_SAMPLE_RATE`, `SENTRY_SEND_DEFAULT_PII` from `.env` (documented in `.env.example`, all defaulted to safe values for local dev). Hub auto-bound as `sentry` in the container.
+- **Structured JSON logging**: `config/logging.php` `json` channel: Monolog `StreamHandler` + `JsonFormatter` (newline-delimited) → `storage/logs/stayflow.jsonl`. Two custom Monolog processors implement `Monolog\Processor\ProcessorInterface` and run after `PsrLogMessageProcessor`:
+  - `App\Support\Logging\PiiScrubberProcessor` — scrubs message/context/extra.
+  - `App\Support\Logging\RequestIdProcessor` — promotes `context.request_id` to `extra.request_id` for log-search friendliness.
+- **`request_id` middleware**: `App\Http\Middleware\AssignRequestId` registered in the `web` group ahead of `SetLocale`. Reads `X-Request-Id` (whitelist `A-Za-z0-9_-` only, max 64 — rejects newlines/spaces/oversize as a log-injection guard) or generates a 16-hex id. Calls `Log::shareContext(['request_id' => ...])`, sets it on the request, echoes it on the response header.
+- **PII redaction**: `App\Support\Helpers\PiiScrubber` does two-layer scrubbing. (1) Value-based regex (emails, phone numbers, JWTs, `key=value` / `key: value` credential shapes). (2) Key-based: a context key whose name contains a sensitive substring (`password`, `token`, `secret`, `api_key`, `cookie`, `credit_card`, `cvv`, ...) has its value replaced with `***` regardless of content. False positives accepted; false negatives unacceptable.
+- **Tests**: 36 new Pest tests (29 unit + 7 feature), 115 total / 466 assertions green. PiiScrubber, RequestId, both processors, json channel end-to-end (writes to a temp `.jsonl`, asserts PII redaction + `request_id` in `extra`), Sentry SDK autoloading + `sentry` binding.
+- **Out of scope for P0-07** (covered by later tasks): `organization_id` / `property_id` in logs (P1-01 tenancy), exception capture end-to-end against a real Sentry project (P0-08 once a DSN is provisioned), `SentryServiceProvider` for custom before_send / tenant context (P1-01).
+- **Acceptance proof**:
+  - Unit: `vendor/bin/pest tests/Unit/Support` → 29 passed.
+  - Feature: `vendor/bin/pest tests/Feature/Logging tests/Feature/Sentry` → 7 passed.
+  - Format: `vendor/bin/pint` → no fixes needed.
+  - Static: `vendor/bin/phpstan analyse` → no errors.
+  - Sample log line (from JsonLogTest): `{"message":"user login","context":{"email":"***@***.***","api_key":"***"},"level":200,"level_name":"INFO","channel":"testing","datetime":"...","extra":{"request_id":"test-id-1234"}}`.
 
 ### P0-08 Pilot hotel recruitment [human]
 Deps: — · Size: L · Status: todo

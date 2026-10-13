@@ -15,6 +15,9 @@ Applies to humans and AI agents alike. Where a rule says "CI enforces", a failin
 ## 2. Data and domain rules
 
 1. **Money:** integer minor units + ISO currency; use the `Money` value object; never floats; rounding is explicit and tested.
+   Full policy and the rounding/tax rules live in `docs/MONEY.md`. Money is
+   represented by `App\Support\Money\Money`; tax and service charge by
+   `App\Support\Money\TaxRule` and `App\Support\Money\TaxCalculator`.
 2. **Time:** store UTC timestamps; stay dates are `DATE` in the property's timezone; use helpers from P1-12; never format dates by hand.
 3. **Migrations:**
    - Never edit a migration that has shipped; add a new one.

@@ -196,9 +196,35 @@ Deps: P1-01 · Size: S · Status: todo
 - Acceptance: updates to rates, reservations, and roles appear in the log; log entries cannot be edited via the app.
 
 ### P1-05 Money and tax primitives
-Deps: P0-01 · Size: M · Status: todo
+Deps: P0-01 · Size: M · Status: done (branch `feat/p1-05-money`, last commit `f50190d`)
 - `Money` value object (minor units + currency), arithmetic with explicit rounding rules, tax/service-charge calculator (inclusive/exclusive, ordering).
 - Acceptance: property-based tests (no float use; add/subtract/allocate preserve totals); rounding rules documented in code and `docs/`.
+- Closed on `feat/p1-05-money`: 167/167 Pest (875 assertions), Pint clean, PHPStan 0 errors, 52 new unit tests under `tests/Unit/Support/Money/`.
+- Commits:
+  - `40d3e69` chore(p1-05): claim task and install brick/money ^0.10
+  - `93b82a0` feat(p1-05): Money value object with arithmetic and allocation
+  - `665f26f` feat(p1-05): tax and service-charge primitives with inclusive/exclusive calculator
+  - `4ef381e` test(p1-05): cover Money, tax primitives, and property-based invariants
+  - `95089ef` docs(p1-05): add MONEY.md and link from ENGINEERING_STANDARDS
+  - `f50190d` chore(p1-05): pint formatting and array_values cleanup
+- Deliverables:
+  - `app/Support/Money/Money.php` - readonly value object. Amount stored as integer minor units; currency as ISO 4217 code (validated through brick/money). Factories: `ofMinor`, `of`, `zero`. Arithmetic: `plus`, `minus`, `multipliedBy(RoundingMode)`, `dividedBy(RoundingMode)`, `negate`, `abs`. Allocation: `allocate(int)`, `allocateToTargets(int[])`. Comparison: `equals`, `compareTo`, `isZero/Positive/Negative`, `isGreaterThan/LessThan/...OrEqualTo`. Serialization: `toArray`, `fromArray`. Cross-currency operations throw `App\Support\Money\Exception\CurrencyMismatchException`.
+  - `app/Support/Money/Exception/CurrencyMismatchException.php` - DomainException with `::between($a, $b)` factory.
+  - `app/Support/Money/TaxKind.php` - enum `tax | service_charge`.
+  - `app/Support/Money/TaxAppliesTo.php` - enum `room | addon | all`.
+  - `app/Support/Money/TaxRule.php` - readonly VO. Rate stored as integer basis points (10000 bps = 100 %). Inclusive vs exclusive, appliesTo, order, per-rule roundingMode. Static factories `TaxRule::exclusive()` / `TaxRule::inclusive()`. Constructor rejects negative and out-of-range rates.
+  - `app/Support/Money/TaxLine.php` - readonly VO (rule + amount + inclusive flag).
+  - `app/Support/Money/TaxBreakdown.php` - readonly VO (subtotal + total + lines). Helpers `taxTotal()`, `serviceChargeTotal()`, `grandChargesTotal()`. Asserts all amounts share the subtotal's currency.
+  - `app/Support/Money/TaxCalculator.php` - service. Sorts rules by `order` ascending. Exclusive rules add to the running total; inclusive rules extract from the original subtotal (tax = subtotal - subtotal / (1 + rate)) and leave the total unchanged. This avoids circular logic when multiple inclusive rules share a price.
+  - `docs/MONEY.md` - storage rule, value-object API, rounding policy (HALF_EVEN default, when to override), tax model, three worked examples, anti-patterns. Documents the IDR ISO 4217 two-fraction-digit gotcha and the `Money::ofMinor()` workaround.
+  - `docs/ENGINEERING_STANDARDS.md` section 2.1 - now references `docs/MONEY.md` and names the `App\Support\Money\*` classes.
+- Acceptance proof:
+  - **Money value object (minor units + currency)**: `Money::ofMinor(1_000, 'USD')` -> 1000 cents; `Money::of('12.34', 'USD')` -> 1234 cents. Cross-currency `plus`/`minus`/`equals`/`compareTo` throw `CurrencyMismatchException`. Unknown ISO codes throw `UnknownCurrencyException`. (`tests/Unit/Support/Money/MoneyTest.php`.)
+  - **Arithmetic with explicit rounding rules**: `multipliedBy` and `dividedBy` accept a `Brick\Math\RoundingMode` enum; default is `HALF_EVEN`. HALF_EVEN vs HALF_UP differ at exact half-points (e.g. 1.00 * 0.005 -> 0.00 vs 0.01, asserted in `MoneyTest::multipliedBy_HALF_EVEN_rounds_0_005_down_at_scale_2` and `MoneyTest::multipliedBy_HALF_UP_rounds_0_005_up_at_scale_2`).
+  - **Tax/service-charge calculator (inclusive/exclusive, ordering)**: `TaxCalculatorTest` covers the textbook $122.10 chained-SC-then-VAT case, the $110.00 inclusive-of-VAT-plus-exclusive-SC case, order-of-application, and the per-rule rounding mode (`HALF_EVEN` vs `HALF_UP` at the 0.005 cent boundary).
+  - **Property-based tests (no float use; add/subtract/allocate preserve totals)**: `MoneyPropertyTest` runs 30-40 deterministic random iterations per property (seed `2025_10_13`) for: addition associativity, addition commutativity, additive identity (`a + 0 == a`), self-subtract (`a - a == 0`), multiply identity (`a * 1 == a`), and allocation preserves total for `N=2..15` with sources up to 1_000_000.
+  - **No float use**: `Money::of` accepts `string|int` only; `ofMinor` accepts `int` only; `multipliedBy`/`dividedBy` accept `string|int` only. brick/money's `BigInteger` backs all arithmetic; the `brickToMinor()` private helper multiplies by `10^fractionDigits` via `Brick\Math\BigInteger` to recover the integer minor count. Floats are impossible to construct at the type level.
+  - **Rounding rules documented in code and docs/**: `Money::DEFAULT_ROUNDING_MODE` const in code; `docs/MONEY.md` section 3 (Rounding) documents the policy with a domain table (default, tax-on-cash, final-invoice) and an anti-pattern warning against float math.
 
 ### P1-06 Property catalog
 Deps: P1-01, P1-03 · Size: L · Status: todo

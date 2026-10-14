@@ -15,11 +15,10 @@ use App\Modules\Platform\Domain\Identity\TwoFactorSecret;
 final readonly class TwoFactorEnrollment
 {
     /**
-     * @param list<RecoveryCode> $plaintextRecoveryCodes shown once, never stored
+     * @param  list<RecoveryCode>  $plaintextRecoveryCodes  shown once, never stored
      */
     public function __construct(
         public TwoFactorSecret $secret,
         public array $plaintextRecoveryCodes,
-    ) {
-    }
+    ) {}
 }

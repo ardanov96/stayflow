@@ -9,7 +9,7 @@ use App\Modules\Platform\Application\Identity\BeginTwoFactorEnrollmentAction;
 use App\Modules\Platform\Application\Identity\ConfirmTwoFactorEnrollmentAction;
 use App\Modules\Platform\Application\Identity\Ports\TotpGenerator;
 use App\Modules\Platform\Application\Identity\Ports\UserIdentityGateway;
-use App\Modules\Platform\Domain\Identity\TwoFactorSecret;
+use App\Modules\Platform\Domain\Identity\RecoveryCode;
 use App\Modules\Platform\Http\Requests\Auth\TwoFactorSetupConfirmRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -77,7 +77,7 @@ final class TwoFactorSetupController extends Controller
     public function confirm(
         TwoFactorSetupConfirmRequest $request,
         ConfirmTwoFactorEnrollmentAction $confirm,
-    ): Response {
+    ): Response|RedirectResponse {
         $userId = (int) $request->user()->getKey();
         $enrollment = $confirm->execute($userId, $request->code());
 
@@ -88,7 +88,7 @@ final class TwoFactorSetupController extends Controller
         }
 
         return Inertia::render('Auth/TwoFactorRecoveryCodes', [
-            'codes' => array_map(static fn (TwoFactorSecret $c): string => (string) $c, $enrollment->plaintextRecoveryCodes),
+            'codes' => array_map(static fn (RecoveryCode $c): string => (string) $c, $enrollment->plaintextRecoveryCodes),
             'justGenerated' => true,
         ]);
     }

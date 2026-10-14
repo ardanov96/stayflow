@@ -8,11 +8,11 @@ use App\Models\User;
 use App\Modules\Platform\Application\Identity\Ports\UserIdentityGateway;
 use App\Modules\Platform\Application\Identity\UserDescriptor;
 use App\Modules\Platform\Domain\Identity\TwoFactorSecret;
-use Illuminate\Auth\Passwords\PasswordBrokerManager;
+use DateTimeImmutable;
+use DateTimeInterface;
 use Illuminate\Contracts\Auth\PasswordBroker;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Str;
 
 /**
  * Eloquent-backed implementation of {@see UserIdentityGateway}.
@@ -82,7 +82,7 @@ final class EloquentUserIdentityGateway implements UserIdentityGateway
         return $user !== null && $user->isLocked();
     }
 
-    public function lockUntil(int $userId, \DateTimeInterface $until): void
+    public function lockUntil(int $userId, DateTimeInterface $until): void
     {
         User::query()
             ->whereKey($userId)
@@ -98,21 +98,13 @@ final class EloquentUserIdentityGateway implements UserIdentityGateway
 
     public function incrementFailedLogin(int $userId): int
     {
-        $affected = User::query()
+        User::query()
             ->whereKey($userId)
             ->increment('failed_login_count');
-        // increment returns the affected row count, not the new
-        // value. We need the new value to compare against
-        // MAX_FAILED_LOGINS in the Application action, so re-read.
-        $newValue = (int) User::query()
+
+        return (int) User::query()
             ->whereKey($userId)
             ->value('failed_login_count');
-        if ($newValue === 0 && $affected === 0) {
-            // row was missing
-            return 0;
-        }
-
-        return $newValue;
     }
 
     public function resetFailedLogin(int $userId): void
@@ -154,10 +146,6 @@ final class EloquentUserIdentityGateway implements UserIdentityGateway
             ->whereKey($userId)
             ->update([
                 'two_factor_secret' => $secret->value,
-                // Re-start enrollment: clear any previous
-                // confirmation, recovery codes, and throttle
-                // counters so a fresh secret really is a clean
-                // slate.
                 'two_factor_confirmed_at' => null,
                 'two_factor_recovery_codes' => null,
             ]);
@@ -179,7 +167,7 @@ final class EloquentUserIdentityGateway implements UserIdentityGateway
             return null;
         }
 
-        return new TwoFactorSecret($raw);
+        return new TwoFactorSecret((string) $raw);
     }
 
     public function disableTwoFactor(int $userId): void
@@ -195,9 +183,11 @@ final class EloquentUserIdentityGateway implements UserIdentityGateway
 
     public function replaceRecoveryCodes(int $userId, array $hashedCodes): void
     {
+        // The Eloquent `encrypted:array` cast expects a list at
+        // write time; the port already constrains the type.
         User::query()
             ->whereKey($userId)
-            ->update(['two_factor_recovery_codes' => array_values($hashedCodes)]);
+            ->update(['two_factor_recovery_codes' => $hashedCodes]);
     }
 
     public function consumeRecoveryCode(int $userId, string $hashedCode): void
@@ -206,39 +196,34 @@ final class EloquentUserIdentityGateway implements UserIdentityGateway
         if ($user === null) {
             return;
         }
-        $current = $user->two_factor_recovery_codes ?? [];
+        $raw = $user->getAttribute('two_factor_recovery_codes');
+        /** @var array<int, string> $current */
+        $current = is_array($raw) ? $raw : [];
         $remaining = array_values(array_filter(
             $current,
-            static fn ($h): bool => ! hash_equals((string) $h, $hashedCode),
+            static fn (string $h): bool => ! hash_equals($h, $hashedCode),
         ));
-        $user->two_factor_recovery_codes = $remaining;
+        $user->setAttribute('two_factor_recovery_codes', $remaining);
         $user->save();
     }
 
     public function getRecoveryCodeHashes(int $userId): array
     {
-        $hashes = User::query()
-            ->whereKey($userId)
-            ->value('two_factor_recovery_codes');
+        $user = User::query()->find($userId);
+        if ($user === null) {
+            return [];
+        }
+        $hashes = $user->getAttribute('two_factor_recovery_codes');
 
-        return is_array($hashes) ? array_values($hashes) : [];
+        return is_array($hashes) ? array_values(array_map('strval', $hashes)) : [];
     }
 
-    public function createPasswordResetToken(string $email): ?string
+    public function createPasswordResetToken(string $email): string
     {
-        // Laravel's Password broker returns a constant string
-        // (`Password::INVALID_USER`, `Password::RESET_LINK_SENT`,
-        // `Password::RESET_THROTTLED`) for the public response;
-        // the broker's internal createToken method returns the
-        // raw token we need to hand off to the mailer.
         $broker = $this->broker();
-        $token = $broker->createToken(User::query()->where('email', $email)->first());
-        // The broker returns a string even when the email is
-        // unknown (it doesn't leak the existence to the caller
-        // here, it just returns a throwaway token). The Application
-        // side still only sends the mail when findByEmail was
-        // non-null, so the leak window is closed at the action.
-        return $token;
+        $user = User::query()->where('email', $email)->first();
+
+        return (string) $broker->createToken($user);
     }
 
     public function consumePasswordResetToken(string $email, string $token): ?int
@@ -257,15 +242,19 @@ final class EloquentUserIdentityGateway implements UserIdentityGateway
 
     private function broker(): PasswordBroker
     {
-        // Resolve through the manager so the same broker
-        // configuration (hashing, throttling) is used everywhere.
-        $manager = app(PasswordBrokerManager::class);
-
-        return $manager->broker();
+        return Password::broker();
     }
 
     private function toDescriptor(User $user): UserDescriptor
     {
+        $lockedUntilRaw = $user->getAttribute('locked_until');
+        $lockedUntil = null;
+        if ($lockedUntilRaw instanceof DateTimeInterface) {
+            $lockedUntil = $lockedUntilRaw;
+        } elseif (is_string($lockedUntilRaw) && $lockedUntilRaw !== '') {
+            $lockedUntil = new DateTimeImmutable($lockedUntilRaw);
+        }
+
         return new UserDescriptor(
             id: (int) $user->getKey(),
             email: (string) $user->email,
@@ -273,7 +262,7 @@ final class EloquentUserIdentityGateway implements UserIdentityGateway
             emailVerified: $user->email_verified_at !== null,
             twoFactorConfirmed: $user->hasTwoFactor(),
             isLocked: $user->isLocked(),
-            lockedUntil: $user->locked_until,
+            lockedUntil: $lockedUntil,
             requiresTwoFactor: $user->requiresTwoFactor(),
         );
     }

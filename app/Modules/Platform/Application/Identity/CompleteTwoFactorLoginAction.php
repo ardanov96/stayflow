@@ -32,8 +32,7 @@ final readonly class CompleteTwoFactorLoginAction
         private TotpGenerator $totp,
         private LoginAttemptRecorder $attempts,
         private AuthMailer $mailer,
-    ) {
-    }
+    ) {}
 
     public function execute(
         int $userId,

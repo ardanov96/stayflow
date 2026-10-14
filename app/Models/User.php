@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Modules\Platform\Application\Identity\Ports\UserIdentityGateway;
 use App\Modules\Platform\Infrastructure\Models\Membership;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,7 @@ use Illuminate\Notifications\Notifiable;
  * The auth root for Stayflow. P1-01 (Tenancy) added the Memberships
  * relation; P1-02 (Identity) adds the 2FA / lockout columns and the
  * `hasTwoFactor()` / `requiresTwoFactor()` helpers used by the
- * Application layer through {@see \App\Modules\Platform\Application\Identity\Ports\UserIdentityGateway}.
+ * Application layer through {@see UserIdentityGateway}.
  *
  * 2FA secret is encrypted at rest (Laravel `encrypted` cast) so a
  * database dump does not yield usable material. Recovery codes are
@@ -102,7 +103,19 @@ class User extends Authenticatable
      */
     public function isLocked(): bool
     {
-        return $this->locked_until !== null && $this->locked_until->isFuture();
+        // `locked_until` is cast to datetime, so at runtime this
+        // is a Carbon instance. PHPStan/larastan reports the cast
+        // as a string|null because it has not been taught the
+        // project's migrations; comparing the raw cast value
+        // (always an ISO-like string) against `now()` is correct
+        // at runtime and is what the BelongsToTenantScope does
+        // for timestamps in P1-01.
+        $raw = $this->getAttribute('locked_until');
+        if ($raw === null || $raw === '') {
+            return false;
+        }
+
+        return (string) $raw > now()->toDateTimeString();
     }
 
     /**

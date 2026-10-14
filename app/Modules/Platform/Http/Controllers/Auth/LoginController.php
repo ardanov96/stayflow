@@ -6,11 +6,10 @@ namespace App\Modules\Platform\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Platform\Application\Identity\AuthenticateUserAction;
-use App\Modules\Platform\Application\Identity\AuthOutcome;
-use App\Modules\Platform\Domain\Identity\LoginFailureReason;
 use App\Modules\Platform\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -68,7 +67,7 @@ final class LoginController extends Controller
     {
         // Auth::loginUsingId regenerates the session ID as a
         // session-fixation defense (AGENTS.md §3 login flow).
-        \Illuminate\Support\Facades\Auth::loginUsingId($userId, $remember);
+        Auth::loginUsingId($userId, $remember);
         $request->session()->regenerate();
     }
 }

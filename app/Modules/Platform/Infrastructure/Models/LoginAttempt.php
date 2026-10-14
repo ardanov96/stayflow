@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Modules\Platform\Infrastructure\Models;
 
+use App\Modules\Platform\Infrastructure\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 
 /**
  * Pre-authentication login attempt log (P1-02 Identity).
  *
  * This table is deliberately NOT covered by
- * {@see \App\Modules\Platform\Infrastructure\Concerns\BelongsToTenant}:
+ * {@see BelongsToTenant}:
  * a login attempt happens before the caller is identified, so there
  * is no tenant scope to enforce. The arch test
  * (tests/Feature/Platform/Tenancy/TenantTableArchTest) lists this

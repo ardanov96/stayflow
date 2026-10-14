@@ -26,8 +26,7 @@ class RecoveryCodeUsedMail extends Mailable implements ShouldQueue
     public function __construct(
         public string $userName,
         public string $remainingCount,
-    ) {
-    }
+    ) {}
 
     public function envelope(): Envelope
     {

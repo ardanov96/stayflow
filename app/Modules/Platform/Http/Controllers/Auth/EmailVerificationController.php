@@ -31,10 +31,10 @@ final class EmailVerificationController extends Controller
     ): RedirectResponse {
         $user = User::query()->find($id);
         if ($user === null) {
-            throw new AuthorizationException();
+            throw new AuthorizationException;
         }
         if (! hash_equals(sha1((string) $user->email), $hash)) {
-            throw new AuthorizationException();
+            throw new AuthorizationException;
         }
         if (! $user->hasVerifiedEmail()) {
             $action->execute($id);

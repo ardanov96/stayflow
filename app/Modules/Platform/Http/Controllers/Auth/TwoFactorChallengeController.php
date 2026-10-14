@@ -9,6 +9,7 @@ use App\Modules\Platform\Application\Identity\CompleteTwoFactorLoginAction;
 use App\Modules\Platform\Http\Requests\Auth\TwoFactorChallengeRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -56,7 +57,7 @@ final class TwoFactorChallengeController extends Controller
 
         if ($outcome->isAuthenticated()) {
             $request->session()->forget(['auth.two_factor_user_id', 'auth.two_factor_remember']);
-            \Illuminate\Support\Facades\Auth::loginUsingId($outcome->userId, $remember);
+            Auth::loginUsingId($outcome->userId, $remember);
             $request->session()->regenerate();
 
             return redirect()->intended(route('dashboard'));

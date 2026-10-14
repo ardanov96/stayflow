@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace App\Modules\Platform\Application\Identity\Ports;
 
 use App\Modules\Platform\Domain\Identity\LoginFailureReason;
+use App\Modules\Platform\Infrastructure\Concerns\BelongsToTenant;
 
 /**
  * Application port for recording and querying login attempts. The
  * `login_attempts` table is pre-authentication (no tenant context), so
- * the adapter does not use {@see \App\Modules\Platform\Infrastructure\Concerns\BelongsToTenant}.
+ * the adapter does not use {@see BelongsToTenant}.
  */
 interface LoginAttemptRecorder
 {

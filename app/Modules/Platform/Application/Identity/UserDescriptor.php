@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Modules\Platform\Application\Identity;
 
+use App\Modules\Platform\Infrastructure\Identity\Adapters\EloquentUserIdentityGateway;
+use DateTimeInterface;
+
 /**
  * Plain DTO representing a user for the Application layer. Hides the
  * Eloquent User model from anything that would otherwise have to
  * import it. Constructed by the Infrastructure
- * {@see \App\Modules\Platform\Infrastructure\Identity\Adapters\EloquentUserIdentityGateway}.
+ * {@see EloquentUserIdentityGateway}.
  */
 final readonly class UserDescriptor
 {
@@ -29,7 +32,7 @@ final readonly class UserDescriptor
         public bool $emailVerified,
         public bool $twoFactorConfirmed,
         public bool $isLocked,
-        public ?\DateTimeInterface $lockedUntil,
+        public ?DateTimeInterface $lockedUntil,
         bool $requiresTwoFactor = false,
     ) {
         $this->requiresTwoFactor = $requiresTwoFactor;

@@ -18,14 +18,19 @@ final readonly class RequestPasswordResetAction
     public function __construct(
         private UserIdentityGateway $users,
         private AuthMailer $mailer,
-    ) {
-    }
+    ) {}
 
     public function execute(string $email): void
     {
-        $token = $this->users->createPasswordResetToken($email);
-        if ($token !== null) {
-            $this->mailer->sendPasswordResetLink($email, $token);
+        // The gateway always returns a string (Laravel's broker
+        // returns a throwaway token when the email is unknown);
+        // we still gate the mail on the user's existence so an
+        // attacker can't probe by counting which addresses send.
+        $user = $this->users->findByEmail($email);
+        if ($user === null) {
+            return;
         }
+        $token = $this->users->createPasswordResetToken($email);
+        $this->mailer->sendPasswordResetLink($email, $token);
     }
 }

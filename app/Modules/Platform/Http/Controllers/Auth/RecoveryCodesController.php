@@ -7,7 +7,6 @@ namespace App\Modules\Platform\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Modules\Platform\Application\Identity\Ports\UserIdentityGateway;
 use App\Modules\Platform\Application\Identity\RegenerateRecoveryCodesAction;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;

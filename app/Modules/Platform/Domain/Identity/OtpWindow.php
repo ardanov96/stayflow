@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Platform\Domain\Identity;
 
+use App\Modules\Platform\Application\Identity\Ports\TotpGenerator;
 use InvalidArgumentException;
 
 /**
@@ -13,12 +14,14 @@ use InvalidArgumentException;
  * (RFC 6238 §5.2 calls this the "delay window"). A window of 0 is
  * strict: only the current step.
  *
- * Used by {@see \App\Modules\Platform\Application\Identity\Ports\TotpGenerator::verify()}.
+ * Used by {@see TotpGenerator::verify()}.
  */
 final readonly class OtpWindow
 {
     public const STRICT = 0;
+
     public const LENIENT = 1;
+
     public const MAX = 10;
 
     public function __construct(public int $steps)

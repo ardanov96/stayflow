@@ -7,6 +7,7 @@ namespace App\Modules\Platform\Application\Identity;
 use App\Modules\Platform\Application\Identity\Ports\LoginAttemptRecorder;
 use App\Modules\Platform\Application\Identity\Ports\UserIdentityGateway;
 use App\Modules\Platform\Domain\Identity\LoginFailureReason;
+use DateTimeImmutable;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -50,8 +51,7 @@ final readonly class AuthenticateUserAction
     public function __construct(
         private UserIdentityGateway $users,
         private LoginAttemptRecorder $attempts,
-    ) {
-    }
+    ) {}
 
     public function execute(
         string $email,
@@ -118,7 +118,7 @@ final readonly class AuthenticateUserAction
             if ($failedCount >= self::MAX_FAILED_LOGINS) {
                 $this->users->lockUntil(
                     $user->id,
-                    (new \DateTimeImmutable())->modify(
+                    (new DateTimeImmutable)->modify(
                         '+'.self::LOCKOUT_DURATION_SECONDS.' seconds',
                     ),
                 );

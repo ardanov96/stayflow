@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Modules\Platform\Domain\Identity;
 
+use App\Modules\Platform\Application\Identity\Ports\TotpGenerator;
 use InvalidArgumentException;
 
 /**
  * Immutable value object for a TOTP base32 secret.
  *
  * The string is opaque to this class; the verification logic lives
- * behind {@see \App\Modules\Platform\Application\Identity\Ports\TotpGenerator}
+ * behind {@see TotpGenerator}
  * so the Domain stays free of any specific TOTP library. The
  * encryption-at-rest is the Eloquent model's job (Laravel `encrypted`
  * cast); this VO just guards the format.

@@ -29,8 +29,7 @@ class VerifyEmailMail extends Mailable implements ShouldQueue
     public function __construct(
         public string $verifyUrl,
         public string $userName,
-    ) {
-    }
+    ) {}
 
     public function envelope(): Envelope
     {

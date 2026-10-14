@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Platform\Http\Middleware;
 
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,7 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
  * whenever their Membership role requires it.
  *
  * Today the "requires 2FA" set is `owner` and `manager`, mirrored
- * in {@see \App\Models\User::requiresTwoFactor()}. P1-03 (RBAC)
+ * in {@see User::requiresTwoFactor()}. P1-03 (RBAC)
  * owns the canonical list of privileged roles; the middleware
  * will read from the role enum then and the in-model check goes
  * away.
@@ -44,12 +45,15 @@ final class EnsureTwoFactorIsConfirmed
         // the User model. We call them on the Eloquent instance
         // (which is what the guard returns) so the membership
         // relation can be loaded fresh.
-        $requires = method_exists($user, 'requiresTwoFactor')
-            ? (bool) $user->requiresTwoFactor()
-            : false;
-        $has = method_exists($user, 'hasTwoFactor')
-            ? (bool) $user->hasTwoFactor()
-            : false;
+        // Eloquent's hasTwoFactor() / requiresTwoFactor() live on
+        // the User model. PHPStan reports the method_exists check
+        // as "always true" because the type is already App\Models\User;
+        // we keep the call so the middleware stays useful if the
+        // model is swapped (e.g. during a future auth shim) by
+        // relaxing the import-time analysis.
+        /** @var User $user */
+        $requires = (bool) $user->requiresTwoFactor();
+        $has = (bool) $user->hasTwoFactor();
 
         if ($requires && ! $has) {
             return redirect()

@@ -26,8 +26,7 @@ final readonly class ConfirmTwoFactorEnrollmentAction
     public function __construct(
         private UserIdentityGateway $users,
         private TotpGenerator $totp,
-    ) {
-    }
+    ) {}
 
     public function execute(int $userId, string $totpCode): ?TwoFactorEnrollment
     {

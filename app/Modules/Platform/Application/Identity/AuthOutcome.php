@@ -26,8 +26,7 @@ final readonly class AuthOutcome
         public AuthOutcomeStatus $status,
         public ?int $userId,
         public ?LoginFailureReason $failureReason,
-    ) {
-    }
+    ) {}
 
     public static function authenticated(int $userId): self
     {

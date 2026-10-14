@@ -78,7 +78,7 @@ final readonly class RecoveryCode
      */
     public static function verifyAgainst(string $input, string $storedHash): bool
     {
-        if ($storedHash === '' || $storedHash === null) {
+        if ($storedHash === '') {
             return false;
         }
 

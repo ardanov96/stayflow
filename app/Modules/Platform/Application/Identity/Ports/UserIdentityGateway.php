@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace App\Modules\Platform\Application\Identity\Ports;
 
 use App\Modules\Platform\Application\Identity\UserDescriptor;
+use App\Modules\Platform\Domain\Identity\RecoveryCode;
 use App\Modules\Platform\Domain\Identity\TwoFactorSecret;
+use App\Modules\Platform\Infrastructure\Identity\Adapters\EloquentUserIdentityGateway;
+use DateTimeInterface;
 
 /**
  * Application port that hides the User Eloquent model from the
  * Application layer (Domain and Application must not import Eloquent,
  * enforced by tests/Arch/EloquentBoundariesTest). The Infrastructure
  * adapter
- * {@see \App\Modules\Platform\Infrastructure\Identity\Adapters\EloquentUserIdentityGateway}
+ * {@see EloquentUserIdentityGateway}
  * is the only class that touches the User model on behalf of auth.
  *
  * All mutating methods are idempotent; reading and writing is
@@ -41,7 +44,7 @@ interface UserIdentityGateway
 
     public function isLocked(int $userId): bool;
 
-    public function lockUntil(int $userId, \DateTimeInterface $until): void;
+    public function lockUntil(int $userId, DateTimeInterface $until): void;
 
     public function clearLock(int $userId): void;
 
@@ -77,7 +80,7 @@ interface UserIdentityGateway
 
     /**
      * @return list<string> Argon2id hashes of the user's recovery
-     *                       codes, or an empty list when none.
+     *                      codes, or an empty list when none.
      */
     public function getRecoveryCodeHashes(int $userId): array;
 
@@ -90,9 +93,9 @@ interface UserIdentityGateway
     /**
      * Replace the user's full recovery-codes list with the given
      * hashes. Pass an empty array to remove all codes. The hashes
-     * are Argon2id outputs of {@see \App\Modules\Platform\Domain\Identity\RecoveryCode::hash()}.
+     * are Argon2id outputs of {@see RecoveryCode::hash()}.
      *
-     * @param list<string> $hashedCodes
+     * @param  list<string>  $hashedCodes
      */
     public function replaceRecoveryCodes(int $userId, array $hashedCodes): void;
 
@@ -107,8 +110,14 @@ interface UserIdentityGateway
      * email. Returns null when the email is unknown (callers MUST
      * not reveal that fact to the user; this method exists so the
      * adapter can use Laravel's Password broker consistently).
+     *
+     * Returns a string token even when the email is unknown (the
+     * broker returns a throwaway token; the Application layer is
+     * the gate that prevents sending the mail in that case). The
+     * port signature stays `string` so the Application does not
+     * have to null-check a value it is going to use unconditionally.
      */
-    public function createPasswordResetToken(string $email): ?string;
+    public function createPasswordResetToken(string $email): string;
 
     /**
      * Validate a (email, token) pair against the password-reset

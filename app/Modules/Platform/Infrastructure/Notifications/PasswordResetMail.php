@@ -24,8 +24,7 @@ class PasswordResetMail extends Mailable implements ShouldQueue
     public function __construct(
         public string $resetUrl,
         public string $userEmail,
-    ) {
-    }
+    ) {}
 
     public function envelope(): Envelope
     {

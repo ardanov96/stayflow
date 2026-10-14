@@ -6,6 +6,7 @@ namespace App\Modules\Platform\Application\Identity\Ports;
 
 use App\Modules\Platform\Domain\Identity\OtpWindow;
 use App\Modules\Platform\Domain\Identity\TwoFactorSecret;
+use App\Modules\Platform\Infrastructure\Identity\Adapters\Google2faTotpGenerator;
 
 /**
  * Application port for TOTP code generation and verification.
@@ -14,7 +15,7 @@ use App\Modules\Platform\Domain\Identity\TwoFactorSecret;
  * this port is the boundary the Application crosses when it needs to
  * actually issue, verify, or render a TOTP code. The implementation
  * lives in
- * {@see \App\Modules\Platform\Infrastructure\Identity\Adapters\Google2faTotpGenerator}
+ * {@see Google2faTotpGenerator}
  * and is the only place in the codebase that imports
  * `Pragmarx\Google2FA\Google2FA`. Swapping the library is a
  * one-class change.

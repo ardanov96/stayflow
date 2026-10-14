@@ -7,6 +7,7 @@ namespace App\Modules\Platform\Http\Middleware;
 use App\Models\User;
 use App\Modules\Platform\Contracts\OrganizationContext;
 use App\Modules\Platform\Domain\Tenancy\TenantContext;
+use App\Modules\Platform\Infrastructure\Models\Membership;
 use Closure;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
@@ -78,11 +79,15 @@ final class SetTenantContext
             return null;
         }
 
-        return $membership->property_id === null
-            ? TenantContext::forOrganization((int) $membership->organization_id)
+        /** @var Membership $membership */
+        $propertyId = $membership->property_id;
+        $organizationId = (int) $membership->organization_id;
+
+        return $propertyId === null
+            ? TenantContext::forOrganization($organizationId)
             : TenantContext::forOrganizationAndProperty(
-                (int) $membership->organization_id,
-                (int) $membership->property_id,
+                $organizationId,
+                (int) $propertyId,
             );
     }
 

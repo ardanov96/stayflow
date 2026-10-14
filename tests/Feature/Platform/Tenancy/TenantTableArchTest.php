@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Platform\Infrastructure\Concerns\BelongsToTenant;
+use App\Modules\Platform\Infrastructure\Models\LoginAttempt;
 use App\Modules\Platform\Infrastructure\Models\Organization;
 use Illuminate\Database\Eloquent\Model;
 use Tests\Support\TenantArchScanner;
@@ -22,13 +23,16 @@ it('every tenant table uses BelongsToTenant and every non-tenant model is on the
     }
 
     // No organization_id column: the model must be on the explicit
-    // exemption list. Today the only exemption is Organization itself
-    // (it IS the tenant; per ADR-0003 the table is the root of the
-    // hierarchy and does not need to belong to one). When a new
-    // non-tenant model is added, extend the match expression below
-    // with a one-line justification.
+    // exemption list. Today the exemptions are:
+    //   - Organization itself (it IS the tenant; per ADR-0003 the
+    //     table is the root of the hierarchy and does not need to
+    //     belong to one).
+    //   - LoginAttempt (P1-02): pre-authentication table, no tenant
+    //     context at write time. Documented in
+    //     database/migrations/2026_10_14_000002_create_login_attempts_table.php.
     $exempt = match (true) {
         $modelClass === Organization::class => true,
+        $modelClass === LoginAttempt::class => true,
         default => false,
     };
 

@@ -53,6 +53,81 @@
             "id": "Bahasa Indonesia",
             "en": "English",
             "zh": "中文"
+    },
+    "auth": {
+        "login": {
+            "title": "登录",
+            "subtitle": "请使用您的工作邮箱和密码。",
+            "email": "邮箱",
+            "password": "密码",
+            "remember": "记住我",
+            "submit": "登录",
+            "forgot_link": "忘记密码？",
+            "generic_error": "邮箱或密码错误，或账户已被锁定。"
+        },
+        "forgot": {
+            "title": "重置您的密码",
+            "subtitle": "请输入您登录时使用的邮箱。我们将向您发送一个选择新密码的链接。",
+            "email": "邮箱",
+            "submit": "发送重置链接",
+            "back": "返回登录",
+            "generic_success": "如果该邮箱存在账户，我们刚刚发送了重置密码链接。请检查您的收件箱。"
+        },
+        "reset": {
+            "success": "您的密码已重置。您现在可以登录。",
+            "title": "选择新密码",
+            "email": "邮箱",
+            "password": "新密码",
+            "password_confirmation": "确认新密码",
+            "submit": "重置密码",
+            "generic_error": "我们无法重置您的密码。链接可能已过期，请重新申请。"
+        },
+        "verify": {
+            "title": "验证您的邮箱",
+            "subtitle": "打开我们发送给您的邮件并点击验证链接。您可以在下面重新发送。",
+            "resend": "重新发送验证邮件",
+            "success": "您的邮箱已通过验证。"
+        },
+        "two_factor": {
+            "challenge_title": "双因素认证",
+            "challenge_subtitle": "请输入身份验证器应用中的 6 位代码，或使用您的一个恢复代码。",
+            "code_label": "认证代码",
+            "submit": "验证",
+            "generic_error": "代码不正确。请重试。",
+            "setup_required": "您的账户需要双因素认证。请设置以继续。",
+            "disabled": "双因素认证已关闭。",
+            "setup_title": "设置双因素认证",
+            "setup_subtitle": "使用身份验证器应用扫描二维码，然后在下方输入 6 位代码以确认。",
+            "scan_label": "或将此 URI 粘贴到您的身份验证器中",
+            "confirm_code_label": "身份验证器中的代码",
+            "confirm_submit": "确认并完成设置",
+            "codes_title": "恢复代码",
+            "codes_subtitle": "请将这些代码保存在安全的地方。如果您丢失身份验证器，每个代码只能使用一次。",
+            "codes_download": "我已保存我的代码",
+            "regenerate": "生成新代码",
+            "regenerate_confirm": "确定吗？旧代码将立即失效。",
+            "manage_title": "双因素认证",
+            "status_enabled": "已启用",
+            "status_disabled": "未启用",
+            "disable": "关闭双因素认证",
+            "disable_confirm": "确定吗？这将使您在其他设备上退出登录。"
+        }
+    },
+    "email": {
+        "verify_subject": "验证您的 Stayflow 邮箱",
+        "verify_body": "点击下方按钮验证您的邮箱并完成账户设置。",
+        "verify_cta": "验证邮箱",
+        "verify_expiry": "此链接将在 60 分钟后过期。",
+        "resent": "验证邮件已发送。请检查您的收件箱。",
+        "reset_password_subject": "重置您的 Stayflow 密码",
+        "reset_body": "您（或使用您邮箱的某人）请求重置您的 Stayflow 密码。点击下方按钮选择新密码。",
+        "reset_cta": "重置密码",
+        "reset_expiry": "此链接将在 60 分钟后过期。如果您没有请求重置，请忽略此邮件。",
+        "recovery_code_used_subject": "您的账户使用了一个恢复代码登录",
+        "recovery_code_used_body": "您的双因素恢复代码之一刚刚用于登录。您还剩 :count 个代码。",
+        "recovery_code_used_action": "如果这不是您本人的操作，请立即更改密码并检查登录您账户的设备。",
+        "greeting": "您好 :name，",
+        "signature": "— Stayflow 团队"
         }
     }
 }

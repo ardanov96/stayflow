@@ -142,13 +142,18 @@ final class EloquentUserIdentityGateway implements UserIdentityGateway
 
     public function setUnconfirmedTwoFactorSecret(int $userId, TwoFactorSecret $secret): void
     {
-        User::query()
-            ->whereKey($userId)
-            ->update([
-                'two_factor_secret' => $secret->value,
-                'two_factor_confirmed_at' => null,
-                'two_factor_recovery_codes' => null,
-            ]);
+        // Use the model so the `encrypted` cast on
+        // two_factor_secret encrypts the value at rest. A raw
+        // `->update([...])` would bypass the cast and store the
+        // secret in plaintext, which AGENTS.md §3 forbids.
+        $user = User::query()->find($userId);
+        if ($user === null) {
+            return;
+        }
+        $user->setAttribute('two_factor_secret', $secret->value);
+        $user->setAttribute('two_factor_confirmed_at', null);
+        $user->setAttribute('two_factor_recovery_codes', null);
+        $user->save();
     }
 
     public function confirmTwoFactor(int $userId): void
@@ -160,9 +165,15 @@ final class EloquentUserIdentityGateway implements UserIdentityGateway
 
     public function getTwoFactorSecret(int $userId): ?TwoFactorSecret
     {
-        $raw = User::query()
-            ->whereKey($userId)
-            ->value('two_factor_secret');
+        // Read via the model so the `encrypted` cast decrypts the
+        // value before we hand it to the Domain VO. A raw
+        // `->value('two_factor_secret')` would return the
+        // ciphertext which the VO's base32 check rejects.
+        $user = User::query()->find($userId);
+        if ($user === null) {
+            return null;
+        }
+        $raw = $user->getAttribute('two_factor_secret');
         if ($raw === null || $raw === '') {
             return null;
         }
@@ -183,11 +194,16 @@ final class EloquentUserIdentityGateway implements UserIdentityGateway
 
     public function replaceRecoveryCodes(int $userId, array $hashedCodes): void
     {
-        // The Eloquent `encrypted:array` cast expects a list at
-        // write time; the port already constrains the type.
-        User::query()
-            ->whereKey($userId)
-            ->update(['two_factor_recovery_codes' => $hashedCodes]);
+        // Use the model so the `encrypted:array` cast
+        // serializes+encrypts the list at rest. A raw update
+        // would leave the array unencrypted, contradicting the
+        // column comment in the migration.
+        $user = User::query()->find($userId);
+        if ($user === null) {
+            return;
+        }
+        $user->setAttribute('two_factor_recovery_codes', $hashedCodes);
+        $user->save();
     }
 
     public function consumeRecoveryCode(int $userId, string $hashedCode): void

@@ -55,11 +55,19 @@ class UserFactory extends Factory
      */
     public function withTwoFactor(): static
     {
+        // The User model declares `encrypted` / `encrypted:array`
+        // casts on these columns, so the factory must store
+        // PLAINTEXT here; Eloquent encrypts on save. Storing
+        // `encrypt(...)` would double-encrypt and the gateway's
+        // `getTwoFactorSecret` would then fail to decrypt (the
+        // cast is applied at read time too, so the outer
+        // decryption peels one layer and returns the still-
+        // encrypted inner value).
         return $this->state(fn (): array => [
-            'two_factor_secret' => encrypt(str_repeat('A', 32)),
-            'two_factor_recovery_codes' => encrypt([
+            'two_factor_secret' => str_repeat('A', 32),
+            'two_factor_recovery_codes' => [
                 password_hash(str_repeat('B', 10), PASSWORD_ARGON2ID),
-            ]),
+            ],
             'two_factor_confirmed_at' => now(),
         ]);
     }

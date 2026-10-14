@@ -181,9 +181,33 @@ Deps: P0-01 · Size: L · Status: in-progress (branch `feat/p1-01-tenancy`)
 - Acceptance: adding a tenant table without `organization_id` or without the scope fails a CI test.
 
 ### P1-02 Identity and 2FA
-Deps: P1-01 · Size: M · Status: todo
+Status: in-progress (branch `feat/p1-02-identity`)
+Deps: P1-01 · Size: M
 - Login, logout, password reset, email verification, TOTP 2FA (required for owner/manager roles), session management, login throttling.
 - Acceptance: tests for lockout, reset flow, 2FA enrollment and recovery codes; no user enumeration via responses.
+
+- **Commits (planned)**:
+  - `chore(p1-02): claim task and add pragmarx/google2fa`
+  - `feat(p1-02): 2FA columns on users + login_attempts table + throttle columns`
+  - `feat(p1-02): Domain VOs (TwoFactorSecret, RecoveryCode) and infrastructure adapters`
+  - `feat(p1-02): Login, logout, email-verification actions + auth controllers + routes`
+  - `feat(p1-02): password reset request + confirm flow`
+  - `feat(p1-02): 2FA enrollment + challenge + recovery codes actions and controllers`
+  - `feat(p1-02): EnsureTwoFactorIsConfirmed middleware + role-based gate`
+  - `refactor(p1-02): SetTenantContext resolves from auth when available`
+  - `feat(p1-02): Inertia pages (login, reset, verify, 2FA challenge, 2FA setup)`
+  - `test(p1-02): cover lockout, reset, 2FA, recovery, enumeration, tenant`
+  - `docs(p1-02): IDENTITY.md and closeout`
+
+- **Library choice**: `pragmarx/google2fa` v9.1.0 (verified 2026-10-14: 125M installs, 0 security advisories, last update 2026-10-07). Wrapped behind a `TotpGenerator` interface in `App\Modules\Platform\Infrastructure\Identity` so a future swap to `spomky-labs/otphp` is a one-class change.
+
+- **Registration model**: invitation-only (no public `/register`). The first owner of a new tenant is provisioned by the seeder; later owners are invited via Memberships. Public self-registration is a post-MVP concern.
+
+- **Out of scope (separate tasks)**:
+  - P1-03 RBAC: turns the free `role` string on Memberships into a typed enum and wires the permission matrix. P1-02 reads the role string only to decide whether 2FA is required (owner, manager).
+  - Filament admin for user management.
+  - OAuth / SSO / hardware tokens.
+  - Invitation emails: P1-02 doesn't add an invite flow; new users land via DB seeder for the pilot. An invitation endpoint is a follow-up.
 
 ### P1-03 RBAC
 Deps: P1-01 · Size: M · Status: todo

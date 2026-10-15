@@ -191,7 +191,7 @@ Deps: P1-01 · Size: M · Status: todo
 - Acceptance: a permission matrix test covers every route/action; forbidden access returns 403 and is logged.
 
 ### P1-04 Audit log
-Deps: P1-01 · Size: S · Status: todo
+Deps: P1-01 · Size: S · Status: in-progress (branch `feat/P1-04-audit-log`, claimed 2026-10-15)
 - Record actor, subject, event, changes, timestamp for configured models; read-only viewer in admin.
 - Acceptance: updates to rates, reservations, and roles appear in the log; log entries cannot be edited via the app.
 

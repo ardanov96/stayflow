@@ -191,9 +191,10 @@ Deps: P1-01 · Size: M · Status: todo
 - Acceptance: a permission matrix test covers every route/action; forbidden access returns 403 and is logged.
 
 ### P1-04 Audit log
-Deps: P1-01 · Size: S · Status: in-progress (branch `feat/P1-04-audit-log`, claimed 2026-10-15)
+Deps: P1-01 · Size: S · Status: done (branch `feat/P1-04-audit-log`, last commit at closeout)
 - Record actor, subject, event, changes, timestamp for configured models; read-only viewer in admin.
 - Acceptance: updates to rates, reservations, and roles appear in the log; log entries cannot be edited via the app.
+- **Closeout (2026-10-15)**: branch `feat/P1-04-audit-log` (off `main`). Migration `2026_10_15_000001_create_audit_logs_table.php` (tenant-scoped, append-only at the model layer, four indexes). Domain enum `App\Modules\Platform\Domain\AuditLog\AuditEvent`. Application port `App\Modules\Platform\Application\AuditLog\Ports\Auditor` plus `SubjectChange` and `TenantHint` VOs (Application sub-tree stays Eloquent-free, EloquentBoundariesTest still green). Infrastructure adapter `EloquentAuditor`, trait `Auditable`, model `AuditLog` (append-only via `save()` and `delete()` overrides, uses `BelongsToTenant`). `PlatformServiceProvider` binds the port to the adapter as a singleton. `Membership` is the first opt-in via `use Auditable;` (proof of pattern for P1-03 and P2-01+). Tests: 17 unit + 18 feature (35 new). `vendor/bin/phpstan analyse` 0 errors. `vendor/bin/pest --testsuite=Unit` 127/127, `--testsuite=Feature` 64/64. The 47 pre-existing arch-test failures are unchanged (scaffolds for 11 modules live on `feat/p1-02-identity`, not yet on `main`); no new arch failures introduced. Doc `docs/AUDIT.md` follows the same human-readable policy pattern as `docs/TENANCY.md` and `docs/IDENTITY.md`, with a mapping of these acceptance bullets to the code. Follow-ups left for P2-15 (Filament admin viewer) and P1-03 (RBAC 403 case writing to the audit log).
 
 ### P1-05 Money and tax primitives
 Deps: P0-01 · Size: M · Status: done (branch `feat/p1-05-money`, last commit `f50190d`)

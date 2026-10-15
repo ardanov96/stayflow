@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Platform\Infrastructure\Models;
 
 use App\Models\User;
+use App\Modules\Platform\Application\AuditLog\Ports\Auditor;
+use App\Modules\Platform\Infrastructure\AuditLog\EloquentAuditor;
 use App\Modules\Platform\Infrastructure\Concerns\BelongsToTenant;
 use Database\Factories\AuditLogFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,8 +17,8 @@ use RuntimeException;
 
 /**
  * Append-only audit trail for state changes across the platform.
- * Rows are written through {@see \App\Modules\Platform\Application\AuditLog\Ports\Auditor}
- * (the {@see \App\Modules\Platform\Infrastructure\AuditLog\EloquentAuditor}
+ * Rows are written through {@see Auditor}
+ * (the {@see EloquentAuditor}
  * adapter) and are never updated or deleted through the app.
  *
  * Append-only enforcement is at the Application boundary:
@@ -55,6 +57,7 @@ class AuditLog extends Model
      * fires on raw inserts as a safety net.
      */
     public const CREATED_AT = 'created_at';
+
     public const UPDATED_AT = null;
 
     protected $fillable = [
@@ -77,7 +80,7 @@ class AuditLog extends Model
         return [
             'old_values' => 'array',
             'new_values' => 'array',
-            'metadata'   => 'array',
+            'metadata' => 'array',
             'created_at' => 'datetime',
         ];
     }
@@ -94,7 +97,6 @@ class AuditLog extends Model
      * by id through the Catalog `Property` Contracts port or via a
      * dedicated query class.
      */
-
     public function actor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'actor_id');

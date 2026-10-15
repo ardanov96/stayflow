@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace App\Modules\Platform\Application\AuditLog;
 
+use App\Modules\Platform\Application\AuditLog\Ports\Auditor;
+use App\Modules\Platform\Domain\AuditLog\AuditEvent;
+use App\Modules\Platform\Infrastructure\Concerns\Auditable;
 use InvalidArgumentException;
 
 /**
  * Immutable value object describing the change to a single subject
- * row that the {@see \App\Modules\Platform\Application\AuditLog\Ports\Auditor}
+ * row that the {@see Auditor}
  * port persists into the `audit_logs` table.
  *
  * Pure PHP, no Eloquent. The Infrastructure layer is responsible for
- * building one of these from a `Model` inside the {@see \App\Modules\Platform\Infrastructure\Concerns\Auditable}
+ * building one of these from a `Model` inside the {@see Auditable}
  * trait, so Application code never sees an Eloquent type.
  *
  * `oldValues` and `newValues` are Eloquent "attribute" arrays (the
@@ -44,7 +47,7 @@ final readonly class SubjectChange
     /**
      * Convenience factory for the four CRUD-shaped events the
      * `Auditable` trait emits. The `event` argument is a raw string so
-     * the trait does not have to depend on the {@see \App\Modules\Platform\Domain\AuditLog\AuditEvent}
+     * the trait does not have to depend on the {@see AuditEvent}
      * enum at the seam (it is the only place that knows the verb).
      */
     public static function crud(

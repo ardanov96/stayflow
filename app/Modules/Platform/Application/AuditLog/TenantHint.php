@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Modules\Platform\Application\AuditLog;
 
+use App\Modules\Platform\Application\AuditLog\Ports\Auditor;
+use App\Modules\Platform\Domain\Tenancy\TenantContext;
 use InvalidArgumentException;
 
 /**
  * Immutable value object describing the tenant scope an audit row
- * must carry. The {@see \App\Modules\Platform\Application\AuditLog\Ports\Auditor}
+ * must carry. The {@see Auditor}
  * port accepts this as a separate parameter (next to the
  * {@see SubjectChange}) so the calling layer is the only place that
  * has to know about tenant resolution.
@@ -25,7 +27,7 @@ use InvalidArgumentException;
  *     "no tenant, no write" rule the platform enforces everywhere
  *     else.
  *
- * Decoupling the hint from the {@see \App\Modules\Platform\Domain\Tenancy\TenantContext}
+ * Decoupling the hint from the {@see TenantContext}
  * domain VO keeps the Application layer free of an Eloquent-edge
  * dependency; the trait is the one place that bridges the two.
  */

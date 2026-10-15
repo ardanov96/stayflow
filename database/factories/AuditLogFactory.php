@@ -26,16 +26,16 @@ class AuditLogFactory extends Factory
             // `creating` observer if not set; tests that need a
             // specific org override the field explicitly.
             'organization_id' => Organization::factory(),
-            'property_id'     => null,
+            'property_id' => null,
             // Default is a system event (no actor). Tests that exercise
             // the user-driven path use the `forUser` state.
-            'actor_id'        => null,
-            'event'           => 'created',
-            'subject_type'    => AuditLog::class,
-            'subject_id'      => fake()->numberBetween(1, 999_999),
-            'old_values'      => null,
-            'new_values'      => ['id' => 1],
-            'metadata'        => null,
+            'actor_id' => null,
+            'event' => 'created',
+            'subject_type' => AuditLog::class,
+            'subject_id' => fake()->numberBetween(1, 999_999),
+            'old_values' => null,
+            'new_values' => ['id' => 1],
+            'metadata' => null,
         ];
     }
 
@@ -44,7 +44,7 @@ class AuditLogFactory extends Factory
         return $this->state(fn (): array => ['actor_id' => $user->id]);
     }
 
-    public function forOrganization(\App\Modules\Platform\Infrastructure\Models\Organization $organization): static
+    public function forOrganization(Organization $organization): static
     {
         return $this->state(fn (): array => ['organization_id' => $organization->id]);
     }

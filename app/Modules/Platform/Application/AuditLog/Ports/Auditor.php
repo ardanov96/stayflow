@@ -7,11 +7,13 @@ namespace App\Modules\Platform\Application\AuditLog\Ports;
 use App\Modules\Platform\Application\AuditLog\SubjectChange;
 use App\Modules\Platform\Application\AuditLog\TenantHint;
 use App\Modules\Platform\Domain\AuditLog\AuditEvent;
+use App\Modules\Platform\Infrastructure\AuditLog\EloquentAuditor;
+use App\Modules\Platform\Infrastructure\PlatformServiceProvider;
 
 /**
  * The single entry point other modules use to record an audit event.
- * Concrete adapter is bound in {@see \App\Modules\Platform\Infrastructure\PlatformServiceProvider}
- * to {@see \App\Modules\Platform\Infrastructure\AuditLog\EloquentAuditor}.
+ * Concrete adapter is bound in {@see PlatformServiceProvider}
+ * to {@see EloquentAuditor}.
  *
  * Per AGENTS.md §3 (no cross-module Eloquent coupling) and the
  * `tests/Arch/EloquentBoundariesTest` rule (Application sub-trees never

@@ -3,12 +3,15 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use App\Modules\Catalog\Infrastructure\Models\Property;
 use App\Modules\Platform\Contracts\OrganizationContext;
 use App\Modules\Platform\Domain\Tenancy\TenantContext;
+use App\Modules\Platform\Infrastructure\Concerns\Auditable;
 use App\Modules\Platform\Infrastructure\Concerns\BelongsToTenantScope;
 use App\Modules\Platform\Infrastructure\Models\AuditLog;
 use App\Modules\Platform\Infrastructure\Models\Membership;
 use App\Modules\Platform\Infrastructure\Models\Organization;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -117,7 +120,7 @@ it('captures the actor from Auth::id() when a user is logged in', function (): v
 });
 
 it('captures property_id from the model when the subject is property-scoped', function (): void {
-    $property = \App\Modules\Catalog\Infrastructure\Models\Property::factory()
+    $property = Property::factory()
         ->create(['organization_id' => $this->org->id]);
 
     $membership = null;
@@ -146,11 +149,14 @@ it('respects auditExclude() to redact sensitive attributes', function (): void {
     // its sensitive attribute. We do not need a database migration
     // for this: the model is throwaway and the test is about the
     // filter, not the schema.
-    $model = new class extends \Illuminate\Database\Eloquent\Model {
-        use \App\Modules\Platform\Infrastructure\Concerns\Auditable;
+    $model = new class extends Model
+    {
+        use Auditable;
 
         protected $table = 'memberships';
+
         protected $guarded = [];
+
         public $timestamps = false;
 
         protected function auditExclude(): array
@@ -178,11 +184,14 @@ it('respects auditExclude() to redact sensitive attributes', function (): void {
 });
 
 it('auditExclude() returning ["*"] redacts everything', function (): void {
-    $model = new class extends \Illuminate\Database\Eloquent\Model {
-        use \App\Modules\Platform\Infrastructure\Concerns\Auditable;
+    $model = new class extends Model
+    {
+        use Auditable;
 
         protected $table = 'memberships';
+
         protected $guarded = [];
+
         public $timestamps = false;
 
         protected function auditExclude(): array

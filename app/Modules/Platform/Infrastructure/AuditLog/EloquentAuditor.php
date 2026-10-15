@@ -7,6 +7,7 @@ namespace App\Modules\Platform\Infrastructure\AuditLog;
 use App\Modules\Platform\Application\AuditLog\Ports\Auditor;
 use App\Modules\Platform\Application\AuditLog\SubjectChange;
 use App\Modules\Platform\Application\AuditLog\TenantHint;
+use App\Modules\Platform\Contracts\OrganizationContext;
 use App\Modules\Platform\Domain\AuditLog\AuditEvent;
 use App\Modules\Platform\Infrastructure\Models\AuditLog;
 use Illuminate\Support\Facades\Auth;
@@ -26,7 +27,7 @@ use RuntimeException;
  *     from the hint; the audit log is an org-level record even when
  *     the change is property-scoped.
  *  4. Insert via Eloquent. The `AuditLog` model is append-only (see
- *     {@see \App\Modules\Platform\Infrastructure\Models\AuditLog::save()}
+ *     {@see AuditLog::save()}
  *     and ::delete()), so this insert is the only write path.
  *
  * The insert happens inside the same transaction as the source change
@@ -35,7 +36,7 @@ use RuntimeException;
  * fails, the source transaction is rolled back: there is no "write
  * succeeded but audit log missing" outcome.
  *
- * The {@see \App\Modules\Platform\Contracts\OrganizationContext} is
+ * The {@see OrganizationContext} is
  * deliberately NOT consulted here: the hint the trait passes is the
  * source of truth, and the adapter is callable from any context
  * (HTTP, queue, console, seeder, test) without depending on a
@@ -58,14 +59,14 @@ final class EloquentAuditor implements Auditor
     {
         AuditLog::create([
             'organization_id' => $tenant->organizationId,
-            'property_id'     => $tenant->propertyId,
-            'actor_id'        => Auth::id(),
-            'event'           => $event,
-            'subject_type'    => $change->subjectType,
-            'subject_id'      => $change->subjectId,
-            'old_values'      => $change->oldValues,
-            'new_values'      => $change->newValues,
-            'metadata'        => $change->metadata,
+            'property_id' => $tenant->propertyId,
+            'actor_id' => Auth::id(),
+            'event' => $event,
+            'subject_type' => $change->subjectType,
+            'subject_id' => $change->subjectId,
+            'old_values' => $change->oldValues,
+            'new_values' => $change->newValues,
+            'metadata' => $change->metadata,
         ]);
     }
 

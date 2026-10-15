@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Platform\Infrastructure\Models;
 
 use App\Models\User;
-use App\Modules\Platform\Infrastructure\Concerns\BelongsToTenant;
 use App\Modules\Platform\Infrastructure\Concerns\Auditable;
+use App\Modules\Platform\Infrastructure\Concerns\BelongsToTenant;
 use Database\Factories\MembershipFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

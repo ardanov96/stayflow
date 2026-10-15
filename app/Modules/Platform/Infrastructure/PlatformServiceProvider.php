@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Platform\Infrastructure;
 
-use App\Modules\Platform\Application\OrganizationContextManager;
 use App\Modules\Platform\Application\AuditLog\Ports\Auditor;
+use App\Modules\Platform\Application\OrganizationContextManager;
 use App\Modules\Platform\Cache\TenantCache;
 use App\Modules\Platform\Contracts\OrganizationContext;
 use App\Modules\Platform\Infrastructure\AuditLog\EloquentAuditor;

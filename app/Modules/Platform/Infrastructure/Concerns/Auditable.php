@@ -170,6 +170,7 @@ trait Auditable
         $orgId = $model->getAttribute('organization_id');
         if (is_int($orgId) && $orgId > 0) {
             $propertyId = $model->getAttribute('property_id');
+
             return new TenantHint(
                 organizationId: $orgId,
                 propertyId: is_int($propertyId) && $propertyId > 0 ? $propertyId : null,

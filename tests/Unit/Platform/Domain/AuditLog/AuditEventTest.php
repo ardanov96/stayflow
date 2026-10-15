@@ -16,9 +16,9 @@ it('has the four CRUD-shaped cases', function (): void {
 it('fromString() accepts the four known values', function (string $value, AuditEvent $expected): void {
     expect(AuditEvent::fromString($value))->toBe($expected);
 })->with([
-    'created'  => ['created', AuditEvent::Created],
-    'updated'  => ['updated', AuditEvent::Updated],
-    'deleted'  => ['deleted', AuditEvent::Deleted],
+    'created' => ['created', AuditEvent::Created],
+    'updated' => ['updated', AuditEvent::Updated],
+    'deleted' => ['deleted', AuditEvent::Deleted],
     'restored' => ['restored', AuditEvent::Restored],
 ]);
 

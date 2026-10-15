@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace App\Modules\Platform\Domain\AuditLog;
 
+use App\Modules\Platform\Application\AuditLog\Ports\Auditor;
+use App\Modules\Platform\Infrastructure\Concerns\Auditable;
 use InvalidArgumentException;
 
 /**
  * The set of CRUD-shaped event codes the audit log records
- * automatically when an {@see \App\Modules\Platform\Infrastructure\Concerns\Auditable}
+ * automatically when an {@see Auditable}
  * model is created, updated, deleted, or restored. Custom events
  * (e.g. `rate.bulk.updated`, `member.role.changed`) are passed as
- * free-form strings through {@see \App\Modules\Platform\Application\AuditLog\Ports\Auditor::recordCustom}
+ * free-form strings through {@see Auditor::recordCustom}
  * and are NOT represented here; this enum only covers the four
  * automatic verbs the Eloquent observer fires.
  *
@@ -21,9 +23,9 @@ use InvalidArgumentException;
  */
 enum AuditEvent: string
 {
-    case Created  = 'created';
-    case Updated  = 'updated';
-    case Deleted  = 'deleted';
+    case Created = 'created';
+    case Updated = 'updated';
+    case Deleted = 'deleted';
     case Restored = 'restored';
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Modules\Platform\Contracts\OrganizationContext;
 use App\Modules\Platform\Domain\Tenancy\TenantContext;
+use App\Modules\Platform\Infrastructure\Concerns\BelongsToTenant;
 use App\Modules\Platform\Infrastructure\Concerns\BelongsToTenantScope;
 use App\Modules\Platform\Infrastructure\Models\AuditLog;
 use App\Modules\Platform\Infrastructure\Models\Organization;
@@ -19,7 +20,7 @@ beforeEach(function (): void {
 
 it('the AuditLog model uses the BelongsToTenant trait', function (): void {
     $traits = class_uses_recursive(AuditLog::class);
-    expect($traits)->toContain(\App\Modules\Platform\Infrastructure\Concerns\BelongsToTenant::class);
+    expect($traits)->toContain(BelongsToTenant::class);
 });
 
 it('returns zero rows when no context is active (scope short-circuits to 1 = 0)', function (): void {

@@ -6,6 +6,7 @@ namespace App\Modules\Platform\Infrastructure\Models;
 
 use App\Models\User;
 use App\Modules\Platform\Infrastructure\Concerns\BelongsToTenant;
+use App\Modules\Platform\Infrastructure\Concerns\Auditable;
 use Database\Factories\MembershipFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -31,6 +32,7 @@ class Membership extends Model
     use HasFactory;
 
     use BelongsToTenant;
+    use Auditable;
     use SoftDeletes;
 
     protected $fillable = [

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Modules\Platform\Infrastructure;
 
 use App\Modules\Platform\Application\OrganizationContextManager;
+use App\Modules\Platform\Application\AuditLog\Ports\Auditor;
 use App\Modules\Platform\Cache\TenantCache;
 use App\Modules\Platform\Contracts\OrganizationContext;
+use App\Modules\Platform\Infrastructure\AuditLog\EloquentAuditor;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -29,5 +31,12 @@ final class PlatformServiceProvider extends ServiceProvider
         // that resolve via app(TenantCache::class) get the same instance
         // for the lifetime of the request.
         $this->app->singleton(TenantCache::class);
+
+        // P1-04 (Audit log): the Auditor port is the seam every other
+        // module writes through. The adapter pulls the active
+        // OrganizationContext (already a singleton) and the current
+        // Auth user, then persists the row in the same transaction as
+        // the source change.
+        $this->app->singleton(Auditor::class, EloquentAuditor::class);
     }
 }

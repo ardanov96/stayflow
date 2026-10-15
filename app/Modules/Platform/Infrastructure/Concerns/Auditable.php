@@ -10,6 +10,7 @@ use App\Modules\Platform\Application\AuditLog\TenantHint;
 use App\Modules\Platform\Contracts\OrganizationContext;
 use App\Modules\Platform\Domain\AuditLog\AuditEvent;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use RuntimeException;
 
 /**
@@ -35,8 +36,9 @@ use RuntimeException;
  * | restored | null                          | full attributes after restore|
  *
  * `restored` only fires for models that use `SoftDeletes`. Models
- * without `SoftDeletes` never raise the event and Eloquent silently
- * skips the listener.
+ * without `SoftDeletes` never raise the event; the registration is
+ * guarded by a `class_uses_recursive` check so the trait is safe to
+ * apply to any Eloquent model.
  *
  * ## Tenant resolution
  *
@@ -125,16 +127,24 @@ trait Auditable
             app(Auditor::class)->record(AuditEvent::Deleted, $change, $tenant);
         });
 
-        static::restored(static function (Model $model): void {
-            $tenant = self::resolveTenant($model);
-            $change = SubjectChange::crud(
-                subjectId: (int) $model->getKey(),
-                subjectType: $model::class,
-                oldValues: null,
-                newValues: self::filterForAudit($model, $model->getAttributes()),
-            );
-            app(Auditor::class)->record(AuditEvent::Restored, $change, $tenant);
-        });
+        // `restored` is only a valid event on models that use
+        // `SoftDeletes`. Calling `static::restored(...)` on a model
+        // without the trait throws `BadMethodCallException` because
+        // the event is registered by the trait, not by Eloquent
+        // itself. Guard the registration so the trait is safe to
+        // apply to any Eloquent model.
+        if (in_array(SoftDeletes::class, class_uses_recursive(static::class), true)) {
+            static::restored(static function (Model $model): void {
+                $tenant = self::resolveTenant($model);
+                $change = SubjectChange::crud(
+                    subjectId: (int) $model->getKey(),
+                    subjectType: $model::class,
+                    oldValues: null,
+                    newValues: self::filterForAudit($model, $model->getAttributes()),
+                );
+                app(Auditor::class)->record(AuditEvent::Restored, $change, $tenant);
+            });
+        }
     }
 
     /**

@@ -186,7 +186,7 @@ Deps: P1-01 · Size: M · Status: todo
 - Acceptance: tests for lockout, reset flow, 2FA enrollment and recovery codes; no user enumeration via responses.
 
 ### P1-03 RBAC
-Deps: P1-01 · Size: M · Status: todo
+Deps: P1-01 · Size: M · Status: in-progress (branch `feat/P1-03-rbac`, claimed 2026-10-15)
 - Roles per property (owner, manager, front_desk, housekeeping, revenue, marketing) and policies; role management UI in Filament.
 - Acceptance: a permission matrix test covers every route/action; forbidden access returns 403 and is logged.
 

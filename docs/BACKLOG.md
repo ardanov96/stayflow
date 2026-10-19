@@ -186,9 +186,28 @@ Deps: P1-01 · Size: M · Status: todo
 - Acceptance: tests for lockout, reset flow, 2FA enrollment and recovery codes; no user enumeration via responses.
 
 ### P1-03 RBAC
-Deps: P1-01 · Size: M · Status: in-progress (branch `feat/P1-03-rbac`, claimed 2026-10-15)
+Deps: P1-01 · Size: M · Status: done (branch `feat/P1-03-rbac`)
 - Roles per property (owner, manager, front_desk, housekeeping, revenue, marketing) and policies; role management UI in Filament.
 - Acceptance: a permission matrix test covers every route/action; forbidden access returns 403 and is logged.
+- **Closeout (2026-10-19)**:
+  - **Deliverables**:
+    - `Role` domain backed enum (`owner`, `manager`, `front_desk`, `housekeeping`, `revenue`, `marketing`), `requiresTwoFactor()`, `isOrgWide()`, `label()`.
+    - `Permission` domain backed enum (24 fine-grained permissions across all modules).
+    - `RolePermissionMatrix` sealed singleton mapping roles to permissions.
+    - `Membership` model role cast to `Role` enum and `roleEnum()` helper.
+    - `RoleChecker` port (`membershipsIn`, `hasRole`, `hasPermission`) and `EloquentRoleChecker` adapter bound as singleton in `PlatformServiceProvider`.
+    - `AssignRole` and `RevokeRole` actions emitting `member.role.assigned`, `member.role.changed`, and `member.role.revoked` to the audit log.
+    - `AuthorizePermission` HTTP middleware (`permission:<action>`) with structured Monolog warning and `auth.forbidden` audit log recording on 403.
+    - `PlatformServiceProvider::boot()` wiring `Gate::before` to `RoleChecker`.
+    - `docs/RBAC.md` policy and `docs/ENGINEERING_STANDARDS.md` cross-link.
+  - **Acceptance proof**:
+    - `tests/Unit/Platform/Domain/Identity/RoleTest.php`: 12 unit tests covering all 6 roles, string backing, 32-byte column fit, 2FA gating, org-wide scope.
+    - `tests/Unit/Platform/Domain/Identity/PermissionTest.php`: 9 unit tests covering 24 permissions, naming convention, fromString, module extraction.
+    - `tests/Unit/Platform/Domain/Identity/RolePermissionMatrixTest.php`: 12 unit tests verifying the complete matrix and hierarchy (Owner >= Manager, FrontDesk restrictions, Housekeeping scope, Revenue scope, Marketing scope).
+    - `tests/Feature/Platform/Identity/EloquentRoleCheckerTest.php`: 5 feature tests covering org-wide and property-scoped permissions, tenant isolation, soft-deletes.
+    - `tests/Feature/Platform/Identity/AssignAndRevokeRoleTest.php`: 5 feature tests verifying assignment, update, idempotent revocation, and audit trail.
+    - `tests/Feature/Platform/Identity/AuthorizePermissionMiddlewareTest.php`: 16 feature tests verifying 401 on unauthenticated, 403 + Monolog log + audit log on unauthorized, 200 on authorized roles across all routes, cross-tenant isolation, Gate::allows() integration.
+  - **Verification**: `vendor/bin/pint --test` clean, `vendor/bin/phpstan analyse` 0 errors, Pest 251/251 passed (1211 assertions). Follow-up for role management UI in Filament deferred to P2-15 as planned.
 
 ### P1-04 Audit log
 Deps: P1-01 · Size: S · Status: done (branch `feat/P1-04-audit-log`, last commit at closeout)

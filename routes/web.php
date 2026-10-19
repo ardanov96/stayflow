@@ -5,10 +5,27 @@ declare(strict_types=1);
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\ShellController;
 use App\Modules\Platform\Http\Controllers\TenantTestController;
+use App\Modules\Platform\Http\Middleware\EnsureTwoFactorIsConfirmed;
 use Illuminate\Support\Facades\Route;
 
+// P1-02 auth surface (login, 2FA, password reset, email
+// verification). Guest / auth / signed groups are applied inside.
+require __DIR__.'/auth.php';
+
+// Public dashboard. Guests see the shell view; the ShellController
+// is unauthenticated. For authenticated users the
+// EnsureTwoFactorIsConfirmed middleware on the /app route below
+// redirects to /two-factor/setup if the role requires 2FA and it
+// isn't configured yet.
 Route::get('/', [ShellController::class, 'dashboard'])->name('dashboard');
 Route::get('/shell', [ShellController::class, 'dashboard'])->name('shell.dashboard');
+
+// Protected dashboard. The 2FA gate fires here so unauthenticated
+// guests are NOT bounced to /two-factor/setup (the auth middleware
+// would have already redirected them to /login if they tried).
+Route::middleware([EnsureTwoFactorIsConfirmed::class])
+    ->get('/app', [ShellController::class, 'dashboard'])
+    ->name('app.dashboard');
 
 Route::post('/locale', [LocaleController::class, 'update'])
     ->name('locale.update');

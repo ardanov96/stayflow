@@ -181,19 +181,62 @@ Deps: P0-01 · Size: L · Status: in-progress (branch `feat/p1-01-tenancy`)
 - Acceptance: adding a tenant table without `organization_id` or without the scope fails a CI test.
 
 ### P1-02 Identity and 2FA
-Deps: P1-01 · Size: M · Status: todo
+Status: done (branch `feat/p1-02-identity`, last commit `17aa5c4`)
+Deps: P1-01 · Size: M
 - Login, logout, password reset, email verification, TOTP 2FA (required for owner/manager roles), session management, login throttling.
 - Acceptance: tests for lockout, reset flow, 2FA enrollment and recovery codes; no user enumeration via responses.
+- **Commits (on `feat/p1-02-identity`)**:
+  - scaffold: `chore(scaffold): add canonical module skeleton folders for 11 unbuilt modules`
+  - `feat(p1-02): password reset, 2FA, and 2FA-gate middleware; auth-aware SetTenantContext`
+  - `test(p1-02): cover lockout, reset, 2FA, recovery, enumeration, tenant`
+  - `docs(p1-02): add IDENTITY.md and closeout`
+- **Closed on `feat/p1-02-identity`**: 250/250 Pest (1099 assertions), Pint clean, PHPStan 0 errors, 26 new tests under `tests/Unit/Platform/Application/Identity/` and `tests/Feature/Platform/Auth/`.
+- **Deliverables**:
+  - **Migrations**: `2026_10_14_000001_add_identity_columns_to_users_table.php` (failed_login_count, locked_until, two_factor_secret, two_factor_confirmed_at, two_factor_recovery_codes with `encrypted`/`encrypted:array` casts). `2026_10_14_000002_create_login_attempts_table.php` (pre-auth audit, deliberately NOT tenant-scoped).
+  - **Domain (`app/Modules/Platform/Domain/Identity/`)**: `LoginFailureReason` enum (BAD_CREDENTIALS, LOCKED, RATE_LIMITED, INVALID_TOTP, INVALID_RECOVERY_CODE, TWO_FACTOR_REQUIRED), `AuthOutcome` VO + `AuthOutcomeStatus` enum, `UserDescriptor` VO, `TwoFactorSecret` VO (base32, 32 chars), `RecoveryCode` VO.
+  - **Application (`app/Modules/Platform/Application/Identity/`)**: `AuthenticateUserAction` (lockout at 5/15min, IP throttle at 20/60s, hides userId on failure), `RequestPasswordResetAction` / `ResetPasswordAction` (single-use token, clears lock + counter), `BeginTwoFactorEnrollmentAction` / `ConfirmTwoFactorEnrollmentAction` (10 fresh recovery codes on confirm), `CompleteTwoFactorLoginAction` (TOTP then recovery code), `RegenerateRecoveryCodesAction`, `RequestEmailVerificationAction` / `ConsumeEmailVerificationAction`. Ports: `UserIdentityGateway`, `AuthMailer`, `LoginAttemptRecorder`.
+  - **Infrastructure (`app/Modules/Platform/Infrastructure/Identity/`)**: `EloquentUserIdentityGateway` (writes through the model so the casts apply — a `->update([...])` regression was caught and fixed during test wiring), `EloquentLoginAttemptRecorder`, `LaravelAuthMailer` (queueable Mailables, signed URL for verification, opaque token for reset), `Google2faTotpGenerator` (behind `TotpGenerator` port for future swap).
+  - **Http (`app/Modules/Platform/Http/`)**: Controllers `LoginController`, `LogoutController` (POST only), `PasswordResetLinkController`, `NewPasswordController`, `TwoFactorSetupController` (begin/confirm), `TwoFactorChallengeController` (TOTP/recovery), `TwoFactorDisableController` (current password required), `RecoveryCodesController` (show plaintext once, regenerate), `EmailVerificationController` (signed link). FormRequests: `LoginRequest`, `ForgotPasswordRequest`, `ResetPasswordRequest`. Middleware: `EnsureTwoFactorIsConfirmed` (role-based gate on `/app`; P1-03 will replace the hard-coded role check with a permission check).
+  - **Frontend (`resources/js/Pages/Auth/`)**: `Login.vue`, `ForgotPassword.vue`, `ResetPassword.vue`, `TwoFactorChallenge.vue`, `TwoFactorSetup.vue`, `VerifyEmail.vue`, `ConfirmPassword.vue`. i18n keys in `lang/en.json` (`auth.*`).
+- **Acceptance proof**:
+  - **Lockout at 5 failed attempts**: `AuthenticateUserActionTest::it_locks_the_account_after_5_failed_attempts_and_rejects_correct_password_until_unlock` drives 5 wrong attempts then asserts a 6th (correct password) returns `AuthOutcome::failed(LOCKED)`. `LoginFlowTest::it_returns_the_same_response_for_a_wrong_password_and_an_unknown_email` also covers the locked-account branch in the HTTP layer.
+  - **IP rate limit at 20/60s**: `AuthenticateUserActionTest::it_rate_limits_an_IP_at_20_failures_per_60_seconds_independent_of_email` iterates 20 unknown-email attempts then asserts a 21st returns `RATE_LIMITED`.
+  - **No enumeration through responses**: identical 302 + flash for unknown email / wrong password / locked / rate-limited (test in `LoginFlowTest` and `PasswordResetFlowTest`); `AuthenticateUserActionTest` asserts `AuthOutcome::failed(...)` exposes no `userId` but the audit row still carries it.
+  - **2FA enrollment and challenge**: `TwoFactorFlowTest` covers begin->confirm (secret + 10 recovery codes stored), invalid TOTP at confirm, valid TOTP at challenge signs in, recovery code at challenge signs in AND is consumed (count goes from 10 to 9), wrong TOTP rejected, `/app` redirects to `/two-factor/setup` for an owner without 2FA.
+  - **Password reset**: `PasswordResetFlowTest` covers forgot-link (one Mailable queued, identical flash for known/unknown), valid token (password changes, lockout cleared, counter reset), bogus token (silent rejection, same flash, password unchanged), single-use token (second attempt with same token does not change the password again).
+  - **Session rules**: `LoginFlowTest::it_regenerates_the_session_on_login_and_signs_the_user_in` asserts `assertSessionHas` after the redirect; `it_rejects_GET_logout_with_405` proves logout is POST-only.
+  - **No plaintext at rest**: `EloquentUserIdentityGateway` writes through the model (`$user->setAttribute(...); $user->save()`) so the `encrypted`/`encrypted:array` casts apply. Regression caught during test wiring; fixed before close.
+  - **Tenant isolation**: the `/app` route is the only one gated by `EnsureTwoFactorIsConfirmed`; the public `/` route intentionally has no 2FA gate so guests still see the marketing shell. `User::requiresTwoFactor()` reads Memberships through the active `OrganizationContext` (defense-in-depth, tested via the `X-Organization-Id` header in the dev path).
+ - **Risks remaining (not blockers, called out in the PR)**:
+  - **No AuditLog table yet** (P0-04 follow-up). The login_attempts table is the security log only; rate/inventory/folio changes still need the generic actor/subject/changes table before they're investigated. P0-04 must land before the first reservation is created.
+  - **`EnsureTwoFactorIsConfirmed` checks a hard-coded role list** (`owner`, `manager`). This is the seam P1-03 (RBAC) will replace with `Permission::MANAGE_ORG`. The hard-coded list lives in one method on `User`; the swap is a one-file change.
+  - **Public 2FA gate is only on `/app`**. Future protected modules must hang their routes off the `Route::middleware(['auth', EnsureTwoFactorIsConfirmed::class])` group in `routes/auth.php` (line 98).
+  - **No "remember this device" / WebAuthn** (deferred — re-threat-model before adding).
+  - **No invitation flow**. New users still land via the DB seeder for the pilot; an invite endpoint is a post-MVP task.
+- **Reference**: `docs/IDENTITY.md` (full threat model, lockout policy, recovery codes, audit log shape, public contracts for other modules).
+
+- **Library choice**: `pragmarx/google2fa` v9.1.0 (verified 2026-10-14: 125M installs, 0 security advisories, last update 2026-10-07). Wrapped behind a `TotpGenerator` interface in `App\Modules\Platform\Infrastructure\Identity` so a future swap to `spomky-labs/otphp` is a one-class change.
+
+- **Registration model**: invitation-only (no public `/register`). The first owner of a new tenant is provisioned by the seeder; later owners are invited via Memberships. Public self-registration is a post-MVP concern.
+
+- **Out of scope (separate tasks)**:
+  - P1-03 RBAC: turns the free `role` string on Memberships into a typed enum and wires the permission matrix. P1-02 reads the role string only to decide whether 2FA is required (owner, manager).
+  - Filament admin for user management.
+  - OAuth / SSO / hardware tokens.
+  - Invitation emails: P1-02 doesn't add an invite flow; new users land via DB seeder for the pilot. An invitation endpoint is a follow-up.
 
 ### P1-03 RBAC
-Deps: P1-01 · Size: M · Status: todo
+Deps: P1-01, P1-02 · Size: M · Status: todo
 - Roles per property (owner, manager, front_desk, housekeeping, revenue, marketing) and policies; role management UI in Filament.
 - Acceptance: a permission matrix test covers every route/action; forbidden access returns 403 and is logged.
+- **Dependency bump (caused by P1-02)**: P1-03 now depends on **P1-02** in addition to P1-01. The `EnsureTwoFactorIsConfirmed` middleware hard-codes the 2FA-required role list (`owner`, `manager`); P1-03 replaces it with a `Permission::MANAGE_ORG` (or similar) check. The same RBAC layer also has to decide whether low-privilege staff (e.g. `front_desk`) should ever see the 2FA setup prompt — P1-02 currently routes the answer to "no, because the middleware passes them through".
+- **P0-04 must land first**. The permission check itself is small; wiring it through every route is not. P0-04 (AuditLog) is the table that the 403 cases will write to. The next backlog pass should move P1-04 to P0 status.
 
 ### P1-04 Audit log
 Deps: P1-01 · Size: S · Status: todo
 - Record actor, subject, event, changes, timestamp for configured models; read-only viewer in admin.
 - Acceptance: updates to rates, reservations, and roles appear in the log; log entries cannot be edited via the app.
+- **Priority bump (caused by P1-02)**: P1-04 is now flagged as a P0-04 prerequisite for P2 (reservations). The login_attempts table from P1-02 is the security log only; the generic AuditLog table is what reservations, rate updates, and role changes will write through. Move P1-04 to P0 status in the next backlog pass so the table is in place before the first reservation is created.
 
 ### P1-05 Money and tax primitives
 Deps: P0-01 · Size: M · Status: done (branch `feat/p1-05-money`, last commit `f50190d`)

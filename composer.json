@@ -19,6 +19,7 @@
         "inertiajs/inertia-laravel": "^3.5",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
+        "pragmarx/google2fa": "9.1",
         "sentry/sentry-laravel": "4.29"
     },
     "require-dev": {

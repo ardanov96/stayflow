@@ -53,6 +53,81 @@
             "id": "Bahasa Indonesia",
             "en": "English",
             "zh": "中文"
+    },
+    "auth": {
+        "login": {
+            "title": "Sign in",
+            "subtitle": "Use your work email and password.",
+            "email": "Email",
+            "password": "Password",
+            "remember": "Remember me",
+            "submit": "Sign in",
+            "forgot_link": "Forgot your password?",
+            "generic_error": "The email or password is incorrect, or the account is locked."
+        },
+        "forgot": {
+            "title": "Reset your password",
+            "subtitle": "Enter the email you use to sign in. We'll send you a link to choose a new password.",
+            "email": "Email",
+            "submit": "Send reset link",
+            "back": "Back to sign in",
+            "generic_success": "If an account exists for that email, we just sent a password-reset link. Check your inbox."
+        },
+        "reset": {
+            "success": "Your password has been reset. You can sign in now.",
+            "title": "Choose a new password",
+            "email": "Email",
+            "password": "New password",
+            "password_confirmation": "Confirm new password",
+            "submit": "Reset password",
+            "generic_error": "We couldn't reset your password. The link may have expired; request a new one."
+        },
+        "verify": {
+            "title": "Verify your email",
+            "subtitle": "Open the email we sent you and click the verification link. You can resend it below.",
+            "resend": "Resend verification email",
+            "success": "Your email is now verified."
+        },
+        "two_factor": {
+            "challenge_title": "Two-factor authentication",
+            "challenge_subtitle": "Enter the 6-digit code from your authenticator app, or one of your recovery codes.",
+            "code_label": "Authentication code",
+            "submit": "Verify",
+            "generic_error": "That code is not correct. Try again.",
+            "setup_required": "Your account requires two-factor authentication. Please set it up to continue.",
+            "disabled": "Two-factor authentication has been turned off.",
+            "setup_title": "Set up two-factor authentication",
+            "setup_subtitle": "Scan the QR code with your authenticator app, then enter the 6-digit code below to confirm.",
+            "scan_label": "Or paste this URI into your authenticator",
+            "confirm_code_label": "Code from authenticator",
+            "confirm_submit": "Confirm and finish setup",
+            "codes_title": "Recovery codes",
+            "codes_subtitle": "Save these codes somewhere safe. Each one can be used once if you lose your authenticator.",
+            "codes_download": "I have saved my codes",
+            "regenerate": "Generate new codes",
+            "regenerate_confirm": "Are you sure? The old codes stop working immediately.",
+            "manage_title": "Two-factor authentication",
+            "status_enabled": "Enabled",
+            "status_disabled": "Not enabled",
+            "disable": "Turn off two-factor",
+            "disable_confirm": "Are you sure? This will sign you out of other devices."
+        }
+    },
+    "email": {
+        "verify_subject": "Verify your Stayflow email",
+        "verify_body": "Click the button below to verify your email and finish setting up your account.",
+        "verify_cta": "Verify email",
+        "verify_expiry": "This link expires in 60 minutes.",
+        "resent": "Verification email sent. Check your inbox.",
+        "reset_password_subject": "Reset your Stayflow password",
+        "reset_body": "You (or someone using your email) asked to reset your Stayflow password. Click the button below to choose a new one.",
+        "reset_cta": "Reset password",
+        "reset_expiry": "This link expires in 60 minutes. If you did not ask for a reset, ignore this email.",
+        "recovery_code_used_subject": "A recovery code was used to sign in to your account",
+        "recovery_code_used_body": "One of your two-factor recovery codes was just used to sign in. You have :count codes left.",
+        "recovery_code_used_action": "If this was not you, change your password immediately and review the devices signed in to your account.",
+        "greeting": "Hi :name,",
+        "signature": "— The Stayflow team"
         }
     }
 }

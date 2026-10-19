@@ -4,17 +4,24 @@ declare(strict_types=1);
 
 namespace App\Modules\Platform\Infrastructure;
 
+use App\Models\User;
+use App\Modules\Platform\Application\AuditLog\Ports\Auditor;
 use App\Modules\Platform\Application\Identity\Ports\AuthMailer;
 use App\Modules\Platform\Application\Identity\Ports\LoginAttemptRecorder;
+use App\Modules\Platform\Application\Identity\Ports\RoleChecker;
 use App\Modules\Platform\Application\Identity\Ports\TotpGenerator;
 use App\Modules\Platform\Application\Identity\Ports\UserIdentityGateway;
 use App\Modules\Platform\Application\OrganizationContextManager;
 use App\Modules\Platform\Cache\TenantCache;
 use App\Modules\Platform\Contracts\OrganizationContext;
+use App\Modules\Platform\Domain\Identity\Permission;
+use App\Modules\Platform\Infrastructure\AuditLog\EloquentAuditor;
 use App\Modules\Platform\Infrastructure\Identity\Adapters\EloquentLoginAttemptRecorder;
 use App\Modules\Platform\Infrastructure\Identity\Adapters\EloquentUserIdentityGateway;
 use App\Modules\Platform\Infrastructure\Identity\Adapters\Google2faTotpGenerator;
 use App\Modules\Platform\Infrastructure\Identity\Adapters\LaravelAuthMailer;
+use App\Modules\Platform\Infrastructure\Identity\EloquentRoleChecker;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -46,5 +53,47 @@ final class PlatformServiceProvider extends ServiceProvider
         $this->app->singleton(LoginAttemptRecorder::class, EloquentLoginAttemptRecorder::class);
         $this->app->singleton(TotpGenerator::class, Google2faTotpGenerator::class);
         $this->app->singleton(AuthMailer::class, LaravelAuthMailer::class);
+
+        // P1-04 (Audit log): the Auditor port is the seam every other
+        // module writes through. The adapter pulls the active
+        // OrganizationContext (already a singleton) and the current
+        // Auth user, then persists the row in the same transaction as
+        // the source change.
+        $this->app->singleton(Auditor::class, EloquentAuditor::class);
+
+        // P1-03 (RBAC): the RoleChecker port is the seam every gate,
+        // policy, and middleware asks "can this user do X?". The
+        // adapter is Eloquent-backed and stateless; binding it as a
+        // singleton just means the same instance is reused within a
+        // request (it does not cache anything).
+        $this->app->singleton(RoleChecker::class, EloquentRoleChecker::class);
+    }
+
+    public function boot(): void
+    {
+        // Wire Laravel Gate to RoleChecker for all known Permission cases
+        Gate::before(function ($user, string $ability, array $arguments = []): ?bool {
+            if (! $user instanceof User) {
+                return null;
+            }
+
+            $permission = Permission::tryFrom($ability);
+            if ($permission === null) {
+                return null;
+            }
+
+            $context = $this->app->make(OrganizationContext::class)->current();
+            if ($context === null) {
+                return false;
+            }
+
+            $propertyId = $context->propertyId;
+            if (isset($arguments[0]) && is_int($arguments[0])) {
+                $propertyId = $arguments[0];
+            }
+
+            return $this->app->make(RoleChecker::class)
+                ->hasPermission($user, $context->organizationId, $propertyId, $permission);
+        });
     }
 }

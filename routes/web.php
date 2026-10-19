@@ -42,4 +42,30 @@ if (! app()->environment('production')) {
         Route::get('properties', [TenantTestController::class, 'properties'])->name('testing.tenant.properties');
         Route::get('memberships', [TenantTestController::class, 'memberships'])->name('testing.tenant.memberships');
     });
+
+    Route::prefix('_testing/rbac')->group(function (): void {
+        Route::get('reservations', fn () => response()->json(['status' => 'ok']))
+            ->middleware('permission:reservations.create')
+            ->name('testing.rbac.reservations');
+
+        Route::get('audit', fn () => response()->json(['status' => 'ok']))
+            ->middleware('permission:audit.read')
+            ->name('testing.rbac.audit');
+
+        Route::get('folio-refund', fn () => response()->json(['status' => 'ok']))
+            ->middleware('permission:folio.refund')
+            ->name('testing.rbac.folio-refund');
+
+        Route::get('housekeeping', fn () => response()->json(['status' => 'ok']))
+            ->middleware('permission:housekeeping.manage')
+            ->name('testing.rbac.housekeeping');
+
+        Route::get('rates', fn () => response()->json(['status' => 'ok']))
+            ->middleware('permission:rate_plans.manage')
+            ->name('testing.rbac.rates');
+
+        Route::get('promos', fn () => response()->json(['status' => 'ok']))
+            ->middleware('permission:promos.manage')
+            ->name('testing.rbac.promos');
+    });
 }

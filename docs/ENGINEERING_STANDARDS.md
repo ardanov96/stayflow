@@ -40,7 +40,7 @@ Applies to humans and AI agents alike. Where a rule says "CI enforces", a failin
 ## 3. HTTP and API conventions
 
 1. Validation in FormRequests; reject unknown fields on public API.
-2. Authorization via policies on every action; each endpoint has a "forbidden" test and a "wrong tenant" test.
+2. Authorization via policies on every action; each endpoint has a "forbidden" test and a "wrong tenant" test. The RBAC model, roles, matrix, middleware, and 403 audit logging are documented in `docs/RBAC.md`.
 3. Public API: versioned path, `Idempotency-Key` on mutating requests, RFC 7807 problem responses, cursor pagination, rate limits per key and IP.
 4. Webhooks: verify signature first; store the raw payload; acknowledge fast; process asynchronously and idempotently.
 5. Error messages to end users are translated; internal details never leak (no stack traces, SQL, or vendor errors).

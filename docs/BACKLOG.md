@@ -226,17 +226,34 @@ Deps: P1-01 · Size: M
   - Invitation emails: P1-02 doesn't add an invite flow; new users land via DB seeder for the pilot. An invitation endpoint is a follow-up.
 
 ### P1-03 RBAC
-Deps: P1-01, P1-02 · Size: M · Status: todo
+Deps: P1-01, P1-02 · Size: M · Status: done (branch `feat/P1-03-rbac`)
 - Roles per property (owner, manager, front_desk, housekeeping, revenue, marketing) and policies; role management UI in Filament.
 - Acceptance: a permission matrix test covers every route/action; forbidden access returns 403 and is logged.
-- **Dependency bump (caused by P1-02)**: P1-03 now depends on **P1-02** in addition to P1-01. The `EnsureTwoFactorIsConfirmed` middleware hard-codes the 2FA-required role list (`owner`, `manager`); P1-03 replaces it with a `Permission::MANAGE_ORG` (or similar) check. The same RBAC layer also has to decide whether low-privilege staff (e.g. `front_desk`) should ever see the 2FA setup prompt — P1-02 currently routes the answer to "no, because the middleware passes them through".
-- **P0-04 must land first**. The permission check itself is small; wiring it through every route is not. P0-04 (AuditLog) is the table that the 403 cases will write to. The next backlog pass should move P1-04 to P0 status.
+- **Closeout (2026-10-19)**:
+  - **Deliverables**:
+    - `Role` domain backed enum (`owner`, `manager`, `front_desk`, `housekeeping`, `revenue`, `marketing`), `requiresTwoFactor()`, `isOrgWide()`, `label()`.
+    - `Permission` domain backed enum (24 fine-grained permissions across all modules).
+    - `RolePermissionMatrix` sealed singleton mapping roles to permissions.
+    - `Membership` model role cast to `Role` enum and `roleEnum()` helper.
+    - `RoleChecker` port (`membershipsIn`, `hasRole`, `hasPermission`) and `EloquentRoleChecker` adapter bound as singleton in `PlatformServiceProvider`.
+    - `AssignRole` and `RevokeRole` actions emitting `member.role.assigned`, `member.role.changed`, and `member.role.revoked` to the audit log.
+    - `AuthorizePermission` HTTP middleware (`permission:<action>`) with structured Monolog warning and `auth.forbidden` audit log recording on 403.
+    - `PlatformServiceProvider::boot()` wiring `Gate::before` to `RoleChecker`.
+    - `docs/RBAC.md` policy and `docs/ENGINEERING_STANDARDS.md` cross-link.
+  - **Acceptance proof**:
+    - `tests/Unit/Platform/Domain/Identity/RoleTest.php`: 12 unit tests covering all 6 roles, string backing, 32-byte column fit, 2FA gating, org-wide scope.
+    - `tests/Unit/Platform/Domain/Identity/PermissionTest.php`: 9 unit tests covering 24 permissions, naming convention, fromString, module extraction.
+    - `tests/Unit/Platform/Domain/Identity/RolePermissionMatrixTest.php`: 12 unit tests verifying the complete matrix and hierarchy (Owner >= Manager, FrontDesk restrictions, Housekeeping scope, Revenue scope, Marketing scope).
+    - `tests/Feature/Platform/Identity/EloquentRoleCheckerTest.php`: 5 feature tests covering org-wide and property-scoped permissions, tenant isolation, soft-deletes.
+    - `tests/Feature/Platform/Identity/AssignAndRevokeRoleTest.php`: 5 feature tests verifying assignment, update, idempotent revocation, and audit trail.
+    - `tests/Feature/Platform/Identity/AuthorizePermissionMiddlewareTest.php`: 16 feature tests verifying 401 on unauthenticated, 403 + Monolog log + audit log on unauthorized, 200 on authorized roles across all routes, cross-tenant isolation, Gate::allows() integration.
+  - **Verification**: `vendor/bin/pint --test` clean, `vendor/bin/phpstan analyse` 0 errors, Pest 251/251 passed (1211 assertions). Follow-up for role management UI in Filament deferred to P2-15 as planned.
 
 ### P1-04 Audit log
-Deps: P1-01 · Size: S · Status: todo
+Deps: P1-01 · Size: S · Status: done (branch `feat/P1-04-audit-log`, last commit at closeout)
 - Record actor, subject, event, changes, timestamp for configured models; read-only viewer in admin.
 - Acceptance: updates to rates, reservations, and roles appear in the log; log entries cannot be edited via the app.
-- **Priority bump (caused by P1-02)**: P1-04 is now flagged as a P0-04 prerequisite for P2 (reservations). The login_attempts table from P1-02 is the security log only; the generic AuditLog table is what reservations, rate updates, and role changes will write through. Move P1-04 to P0 status in the next backlog pass so the table is in place before the first reservation is created.
+- **Closeout (2026-10-15)**: branch `feat/P1-04-audit-log` (off `main`). Migration `2026_10_15_000001_create_audit_logs_table.php` (tenant-scoped, append-only at the model layer, four indexes). Domain enum `App\Modules\Platform\Domain\AuditLog\AuditEvent`. Application port `App\Modules\Platform\Application\AuditLog\Ports\Auditor` plus `SubjectChange` and `TenantHint` VOs (Application sub-tree stays Eloquent-free, EloquentBoundariesTest still green). Infrastructure adapter `EloquentAuditor`, trait `Auditable`, model `AuditLog` (append-only via `save()` and `delete()` overrides, uses `BelongsToTenant`). `PlatformServiceProvider` binds the port to the adapter as a singleton. `Membership` is the first opt-in via `use Auditable;` (proof of pattern for P1-03 and P2-01+). Tests: 17 unit + 18 feature (35 new). `vendor/bin/phpstan analyse` 0 errors. `vendor/bin/pest --testsuite=Unit` 127/127, `--testsuite=Feature` 64/64. The 47 pre-existing arch-test failures are unchanged (scaffolds for 11 modules live on `feat/p1-02-identity`, not yet on `main`); no new arch failures introduced. Doc `docs/AUDIT.md` follows the same human-readable policy pattern as `docs/TENANCY.md` and `docs/IDENTITY.md`, with a mapping of these acceptance bullets to the code. Follow-ups left for P2-15 (Filament admin viewer) and P1-03 (RBAC 403 case writing to the audit log).
 
 ### P1-05 Money and tax primitives
 Deps: P0-01 · Size: M · Status: done (branch `feat/p1-05-money`, last commit `f50190d`)

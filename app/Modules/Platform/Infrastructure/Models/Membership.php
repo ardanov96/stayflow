@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Platform\Infrastructure\Models;
 
 use App\Models\User;
+use App\Modules\Platform\Domain\Identity\Role;
 use App\Modules\Platform\Infrastructure\Concerns\Auditable;
 use App\Modules\Platform\Infrastructure\Concerns\BelongsToTenant;
 use Database\Factories\MembershipFactory;
@@ -25,6 +26,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * keep the Platform module free of Catalog imports; the relation
  * lives in a future P1-03 Application-layer query that joins via
  * the Catalog module Contracts/ boundary.
+ *
+ * @property Role|string $role
  */
 class Membership extends Model
 {
@@ -41,6 +44,32 @@ class Membership extends Model
         'property_id',
         'role',
     ];
+
+    /**
+     * @return array<string, string|class-string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'role' => Role::class,
+        ];
+    }
+
+    /**
+     * Strongly-typed accessor over the `role` column. The cast above
+     * gives us this automatically, but a typed getter means callers
+     * never have to remember the cast exists (and the static analyzer
+     * knows the return type).
+     */
+    public function roleEnum(): Role
+    {
+        $role = $this->getAttribute('role');
+        if ($role instanceof Role) {
+            return $role;
+        }
+
+        return Role::fromString((string) $role);
+    }
 
     public function user(): BelongsTo
     {

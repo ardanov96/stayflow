@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\SetLocale;
+use App\Modules\Platform\Http\Middleware\AuthorizePermission;
 use App\Modules\Platform\Http\Middleware\SetTenantContext;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -26,6 +27,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // plaintext means the e2e Playwright suite can pre-seed it without
         // having to roundtrip through the encrypted Laravel cookie protocol,
         // and the value is just a 2-letter code (id/en/zh).
+        $middleware->alias([
+            'permission' => AuthorizePermission::class,
+        ]);
+
         $middleware->encryptCookies(except: [
             'locale',
         ]);

@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n';
 import { useForm, Link } from '@inertiajs/vue3';
 import AuthLayout from '@/Layouts/AuthLayout.vue';
 
-const props = defineProps({
+defineProps({
     status: { type: String, default: '' },
 });
 

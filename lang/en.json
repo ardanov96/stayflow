@@ -53,6 +53,7 @@
             "id": "Bahasa Indonesia",
             "en": "English",
             "zh": "中文"
+        }
     },
     "auth": {
         "login": {
@@ -128,6 +129,5 @@
         "recovery_code_used_action": "If this was not you, change your password immediately and review the devices signed in to your account.",
         "greeting": "Hi :name,",
         "signature": "— The Stayflow team"
-        }
     }
 }

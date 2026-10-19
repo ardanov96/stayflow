@@ -54,5 +54,80 @@
             "en": "English",
             "zh": "中文"
         }
+    },
+    "auth": {
+        "login": {
+            "title": "Masuk",
+            "subtitle": "Gunakan email kantor dan kata sandi Anda.",
+            "email": "Email",
+            "password": "Kata sandi",
+            "remember": "Ingat saya",
+            "submit": "Masuk",
+            "forgot_link": "Lupa kata sandi?",
+            "generic_error": "Email atau kata sandi salah, atau akun sedang dikunci."
+        },
+        "forgot": {
+            "title": "Atur ulang kata sandi",
+            "subtitle": "Masukkan email yang Anda pakai untuk masuk. Kami akan mengirim tautan untuk memilih kata sandi baru.",
+            "email": "Email",
+            "submit": "Kirim tautan reset",
+            "back": "Kembali ke masuk",
+            "generic_success": "Jika ada akun untuk email tersebut, kami baru saja mengirim tautan reset kata sandi. Periksa kotak masuk Anda."
+        },
+        "reset": {
+            "success": "Kata sandi Anda telah diatur ulang. Anda dapat masuk sekarang.",
+            "title": "Pilih kata sandi baru",
+            "email": "Email",
+            "password": "Kata sandi baru",
+            "password_confirmation": "Konfirmasi kata sandi baru",
+            "submit": "Atur ulang kata sandi",
+            "generic_error": "Kami tidak dapat mengatur ulang kata sandi Anda. Tautan mungkin sudah kedaluwarsa; minta yang baru."
+        },
+        "verify": {
+            "title": "Verifikasi email Anda",
+            "subtitle": "Buka email yang kami kirim dan klik tautan verifikasi. Anda dapat mengirim ulang di bawah.",
+            "resend": "Kirim ulang email verifikasi",
+            "success": "Email Anda sekarang sudah terverifikasi."
+        },
+        "two_factor": {
+            "challenge_title": "Autentikasi dua faktor",
+            "challenge_subtitle": "Masukkan kode 6 digit dari aplikasi authenticator, atau salah satu kode pemulihan Anda.",
+            "code_label": "Kode autentikasi",
+            "submit": "Verifikasi",
+            "generic_error": "Kode tersebut tidak benar. Coba lagi.",
+            "setup_required": "Akun Anda memerlukan autentikasi dua faktor. Silakan atur untuk melanjutkan.",
+            "disabled": "Autentikasi dua faktor telah dimatikan.",
+            "setup_title": "Siapkan autentikasi dua faktor",
+            "setup_subtitle": "Pindai kode QR dengan aplikasi authenticator, lalu masukkan kode 6 digit di bawah ini untuk konfirmasi.",
+            "scan_label": "Atau tempel URI ini ke authenticator Anda",
+            "confirm_code_label": "Kode dari authenticator",
+            "confirm_submit": "Konfirmasi dan selesaikan pengaturan",
+            "codes_title": "Kode pemulihan",
+            "codes_subtitle": "Simpan kode-kode ini di tempat yang aman. Tiap kode hanya bisa dipakai sekali jika Anda kehilangan authenticator.",
+            "codes_download": "Saya sudah menyimpan kode-kode saya",
+            "regenerate": "Buat kode baru",
+            "regenerate_confirm": "Yakin? Kode lama langsung tidak berlaku.",
+            "manage_title": "Autentikasi dua faktor",
+            "status_enabled": "Aktif",
+            "status_disabled": "Tidak aktif",
+            "disable": "Matikan dua faktor",
+            "disable_confirm": "Yakin? Anda akan keluar dari perangkat lain."
+        }
+    },
+    "email": {
+        "verify_subject": "Verifikasi email Stayflow Anda",
+        "verify_body": "Klik tombol di bawah ini untuk memverifikasi email Anda dan menyelesaikan pengaturan akun.",
+        "verify_cta": "Verifikasi email",
+        "verify_expiry": "Tautan ini kedaluwarsa dalam 60 menit.",
+        "resent": "Email verifikasi terkirim. Periksa kotak masuk Anda.",
+        "reset_password_subject": "Atur ulang kata sandi Stayflow Anda",
+        "reset_body": "Anda (atau seseorang yang menggunakan email Anda) meminta pengaturan ulang kata sandi Stayflow. Klik tombol di bawah untuk memilih yang baru.",
+        "reset_cta": "Atur ulang kata sandi",
+        "reset_expiry": "Tautan ini kedaluwarsa dalam 60 menit. Jika Anda tidak meminta reset, abaikan email ini.",
+        "recovery_code_used_subject": "Sebuah kode pemulihan dipakai untuk masuk ke akun Anda",
+        "recovery_code_used_body": "Salah satu kode pemulihan dua faktor Anda baru saja dipakai untuk masuk. Anda memiliki :count kode tersisa.",
+        "recovery_code_used_action": "Jika ini bukan Anda, segera ubah kata sandi dan tinjau perangkat yang masuk ke akun Anda.",
+        "greeting": "Halo :name,",
+        "signature": "— Tim Stayflow"
     }
 }

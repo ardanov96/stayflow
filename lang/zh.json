@@ -53,6 +53,7 @@
             "id": "Bahasa Indonesia",
             "en": "English",
             "zh": "中文"
+        }
     },
     "auth": {
         "login": {
@@ -128,6 +129,5 @@
         "recovery_code_used_action": "如果这不是您本人的操作，请立即更改密码并检查登录您账户的设备。",
         "greeting": "您好 :name，",
         "signature": "— Stayflow 团队"
-        }
     }
 }

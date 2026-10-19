@@ -53,6 +53,7 @@
             "id": "Bahasa Indonesia",
             "en": "English",
             "zh": "中文"
+        }
     },
     "auth": {
         "login": {
@@ -128,6 +129,5 @@
         "recovery_code_used_action": "Jika ini bukan Anda, segera ubah kata sandi dan tinjau perangkat yang masuk ke akun Anda.",
         "greeting": "Halo :name,",
         "signature": "— Tim Stayflow"
-        }
     }
 }

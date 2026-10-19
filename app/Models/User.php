@@ -6,6 +6,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Modules\Platform\Application\Identity\Ports\UserIdentityGateway;
+use App\Modules\Platform\Domain\Identity\Role;
 use App\Modules\Platform\Infrastructure\Models\Membership;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -120,18 +121,27 @@ class User extends Authenticatable
 
     /**
      * True when any of the user's Memberships has a role that
-     * mandates 2FA. Today the privileged set is `owner` and
-     * `manager`; P1-03 (RBAC) will own the canonical list and this
-     * method will read from the role enum's `requiresTwoFactor()`
-     * rather than hard-coding the strings.
+     * mandates 2FA. Backlog P1-02 and P1-03 mandate 2FA for Owner
+     * and Manager roles (per Role::requiresTwoFactor()).
      */
     public function requiresTwoFactor(): bool
     {
-        $privileged = ['owner', 'manager'];
         $this->loadMissing('memberships');
 
         return $this->memberships
-            ->whereIn('role', $privileged)
-            ->isNotEmpty();
+            ->contains(function ($membership): bool {
+                if (! $membership instanceof Membership) {
+                    return false;
+                }
+
+                $role = $membership->role;
+                if ($role instanceof Role) {
+                    return $role->requiresTwoFactor();
+                }
+
+                $resolved = Role::tryFrom((string) $role);
+
+                return $resolved !== null && $resolved->requiresTwoFactor();
+            });
     }
 }

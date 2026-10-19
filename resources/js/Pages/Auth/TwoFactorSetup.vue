@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n';
 import { useForm, Link } from '@inertiajs/vue3';
 import AuthLayout from '@/Layouts/AuthLayout.vue';
 
-const props = defineProps({
+defineProps({
     alreadyEnrolled: { type: Boolean, default: false },
     secret: { type: String, default: '' },
     otpauthUrl: { type: String, default: '' },

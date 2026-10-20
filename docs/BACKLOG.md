@@ -287,7 +287,7 @@ Deps: P0-01 · Size: M · Status: done (branch `feat/p1-05-money`, last commit `
   - **Rounding rules documented in code and docs/**: `Money::DEFAULT_ROUNDING_MODE` const in code; `docs/MONEY.md` section 3 (Rounding) documents the policy with a domain table (default, tax-on-cash, final-invoice) and an anti-pattern warning against float math.
 
 ### P1-06 Property catalog
-Deps: P1-01, P1-03 · Size: L · Status: todo
+Deps: P1-01, P1-03 · Size: L · Status: in-progress (branch `feat/p1-06-property-catalog`)
 - Properties, room types, room units, amenities, media (WebP optimization), policies, tax rules, timezone/currency/check-in times; Filament resources with i18n content.
 - Acceptance: CRUD with policies; media upload validated and optimized; tenant isolation tests pass.
 

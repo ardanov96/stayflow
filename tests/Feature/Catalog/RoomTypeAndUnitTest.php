@@ -1,0 +1,164 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Models\User;
+use App\Modules\Catalog\Application\Actions\CreateRoomTypeAction;
+use App\Modules\Catalog\Application\Actions\CreateRoomUnitAction;
+use App\Modules\Catalog\Application\Actions\UpdateRoomUnitStatusAction;
+use App\Modules\Catalog\Domain\Room\BedConfig;
+use App\Modules\Catalog\Domain\Room\RoomUnitStatus;
+use App\Modules\Catalog\Infrastructure\Models\Amenity;
+use App\Modules\Catalog\Infrastructure\Models\Property;
+use App\Modules\Catalog\Infrastructure\Models\RoomType;
+use App\Modules\Catalog\Infrastructure\Models\RoomUnit;
+use App\Modules\Platform\Contracts\OrganizationContext;
+use App\Modules\Platform\Domain\Identity\Role;
+use App\Modules\Platform\Domain\Tenancy\TenantContext;
+use App\Modules\Platform\Infrastructure\Models\Membership;
+use App\Modules\Platform\Infrastructure\Models\Organization;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    $this->org = Organization::factory()->create();
+    $this->user = User::factory()->create();
+
+    Membership::factory()->create([
+        'user_id' => $this->user->id,
+        'organization_id' => $this->org->id,
+        'property_id' => null,
+        'role' => Role::Owner,
+    ]);
+
+    $this->context = app(OrganizationContext::class);
+    $this->property = Property::factory()->create(['organization_id' => $this->org->id]);
+});
+
+it('creates a room type and associates amenities', function (): void {
+    $amenity1 = Amenity::factory()->create(['organization_id' => $this->org->id, 'name' => 'Private Pool']);
+    $amenity2 = Amenity::factory()->create(['organization_id' => $this->org->id, 'name' => 'Ocean View']);
+
+    $action = app(CreateRoomTypeAction::class);
+
+    $this->context->swap(
+        TenantContext::forOrganization($this->org->id),
+        function () use ($action, $amenity1, $amenity2): void {
+            $roomType = $action->execute(
+                property: $this->property,
+                data: [
+                    'code' => 'DLX-K',
+                    'name' => 'Deluxe King Villa',
+                    'base_occupancy' => 2,
+                    'max_adults' => 3,
+                    'max_children' => 2,
+                    'amenity_ids' => [$amenity1->id, $amenity2->id],
+                ],
+                actorId: $this->user->id,
+            );
+
+            expect($roomType->code)->toBe('DLX-K')
+                ->and($roomType->occupancy()->maxTotal())->toBe(5)
+                ->and($roomType->amenities)->toHaveCount(2);
+        },
+    );
+});
+
+it('creates room units and updates room type total_units counter', function (): void {
+    $roomType = RoomType::factory()->create([
+        'organization_id' => $this->org->id,
+        'property_id' => $this->property->id,
+        'total_units' => 0,
+    ]);
+
+    $action = app(CreateRoomUnitAction::class);
+
+    $unit1 = $this->context->swap(
+        TenantContext::forOrganization($this->org->id),
+        fn () => $action->execute(
+            roomType: $roomType,
+            data: [
+                'number' => '101',
+                'floor' => '1',
+                'bed_config' => BedConfig::King,
+                'status' => RoomUnitStatus::Clean,
+            ],
+            actorId: $this->user->id,
+        ),
+    );
+
+    $unit2 = $this->context->swap(
+        TenantContext::forOrganization($this->org->id),
+        fn () => $action->execute(
+            roomType: $roomType,
+            data: [
+                'number' => '102',
+                'floor' => '1',
+                'bed_config' => BedConfig::Twin,
+                'status' => RoomUnitStatus::Clean,
+            ],
+            actorId: $this->user->id,
+        ),
+    );
+
+    expect($unit1->number)->toBe('101')
+        ->and($unit2->number)->toBe('102');
+
+    $roomType->refresh();
+    expect($roomType->total_units)->toBe(2);
+});
+
+it('updates room unit status via action', function (): void {
+    $roomType = RoomType::factory()->create([
+        'organization_id' => $this->org->id,
+        'property_id' => $this->property->id,
+    ]);
+    $unit = RoomUnit::factory()->create([
+        'organization_id' => $this->org->id,
+        'property_id' => $this->property->id,
+        'room_type_id' => $roomType->id,
+        'status' => RoomUnitStatus::Clean,
+    ]);
+
+    $action = app(UpdateRoomUnitStatusAction::class);
+    $updated = $this->context->swap(
+        TenantContext::forOrganization($this->org->id),
+        fn () => $action->execute(
+            roomUnit: $unit,
+            newStatus: RoomUnitStatus::Dirty,
+            notes: 'Guest checked out',
+            actorId: $this->user->id,
+        ),
+    );
+
+    expect($updated->status)->toBe(RoomUnitStatus::Dirty)
+        ->and($updated->notes)->toBe('Guest checked out');
+});
+
+it('allows room types and room units creation through HTTP endpoints', function (): void {
+    $response = $this->actingAs($this->user)
+        ->withHeader('X-Organization-Id', (string) $this->org->id)
+        ->postJson("/api/catalog/properties/{$this->property->id}/room-types", [
+            'code' => 'STE-O',
+            'name' => 'Ocean Suite',
+            'base_occupancy' => 2,
+            'max_adults' => 2,
+            'max_children' => 1,
+        ]);
+
+    $response->assertCreated();
+    $roomTypeId = $response->json('data.id');
+
+    $unitResponse = $this->actingAs($this->user)
+        ->withHeader('X-Organization-Id', (string) $this->org->id)
+        ->postJson("/api/catalog/room-types/{$roomTypeId}/room-units", [
+            'number' => '201',
+            'floor' => '2',
+            'bed_config' => 'king',
+            'status' => 'clean',
+        ]);
+
+    $unitResponse->assertCreated()
+        ->assertJsonPath('data.number', '201');
+});

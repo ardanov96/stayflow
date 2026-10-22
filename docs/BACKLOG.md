@@ -307,7 +307,7 @@ Deps: P1-01, P1-03 · Size: L · Status: done (branch `feat/p1-06-property-catal
   - **Verification**: `vendor/bin/pest` 375/375 passed (1782 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean, `npm run lint` clean.
 
 ### P1-07 Rate plans and prices
-Deps: P1-05, P1-06 · Size: L · Status: todo
+Deps: P1-05, P1-06 · Size: L · Status: in-progress (branch `feat/p1-07-rate-plans`)
 - Rate plans (including derived plans), per-date prices per room type, occupancy adjustments (extra adult/child), cancellation policy link.
 - Acceptance: price calculation service returns itemized nightly prices; derived-rate and occupancy cases covered by tests.
 

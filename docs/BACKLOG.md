@@ -307,9 +307,25 @@ Deps: P1-01, P1-03 · Size: L · Status: done (branch `feat/p1-06-property-catal
   - **Verification**: `vendor/bin/pest` 375/375 passed (1782 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean, `npm run lint` clean.
 
 ### P1-07 Rate plans and prices
-Deps: P1-05, P1-06 · Size: L · Status: in-progress (branch `feat/p1-07-rate-plans`)
+Deps: P1-05, P1-06 · Size: L · Status: done (branch `feat/p1-07-rate-plans`)
 - Rate plans (including derived plans), per-date prices per room type, occupancy adjustments (extra adult/child), cancellation policy link.
 - Acceptance: price calculation service returns itemized nightly prices; derived-rate and occupancy cases covered by tests.
+- **Closeout**:
+  - **Deliverables**:
+    - **Migrations**: `create_rate_plans_table`, `create_rate_prices_table` (with composite unique constraints and tenant foreign keys).
+    - **Domain (`app/Modules/Inventory/Domain/`)**: `MealPlan` enum, `DerivationType` enum, `RateDerivation` value object, `NightlyPriceBreakdown` value object, `StayPriceQuote` value object, `CircularDerivationException`, `RatePriceNotFoundException`, `InvalidDateRangeException`.
+    - **Models & Infrastructure (`app/Modules/Inventory/Infrastructure/`)**: `RatePlan`, `RatePrice`, `EloquentRatePlanRepository`, `EloquentRatePriceRepository`, `EloquentPricingService`, `InventoryServiceProvider`. Registered in `bootstrap/providers.php`.
+    - **Contracts (`app/Modules/Inventory/Contracts/`)**: `PricingService` public interface, `RatePlanDTO`, `NightlyPriceDTO`.
+    - **Application Actions (`app/Modules/Inventory/Application/Actions/`)**: `CreateRatePlanAction`, `UpdateRatePlanAction`, `SetRatePricesAction`, `CalculateStayPriceAction`. Emits structured audit logging via `Auditor` port.
+    - **Http (`app/Modules/Inventory/Http/`)**: `RatePlanController`, `RatePriceController`, `PriceQuoteController`, FormRequests, and authenticated routes under `/api/inventory` with RBAC permissions.
+    - **Factories**: `RatePlanFactory`, `RatePriceFactory`.
+    - **Documentation**: `docs/RATES.md`.
+  - **Acceptance proof**:
+    - **Price calculation service returns itemized nightly prices**: Covered by `tests/Feature/Inventory/PriceCalculationTest.php` (verifies multi-night itemized breakdowns with base price and nightly totals matching stay subtotal).
+    - **Derived-rate and occupancy cases covered by tests**: Covered by `tests/Feature/Inventory/PriceCalculationTest.php` (tests percentage derivation from parent plan, extra adult supplements when exceeding base occupancy, extra child supplements, and direct price overrides).
+    - **CRUD and validation**: Covered by `tests/Feature/Inventory/RatePlanCrudTest.php` and `tests/Feature/Inventory/RatePriceBatchTest.php` (including circular derivation detection, audit log generation, and batch date range price updates).
+    - **Tenant isolation**: Covered by `tests/Feature/Inventory/RatePlanTenantIsolationTest.php` and `tests/Feature/Platform/Tenancy/TenantTableArchTest.php`.
+  - **Verification**: `vendor/bin/pest` 397/397 passed (1858 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean, `npm run lint` clean.
 
 ### P1-08 Inventory days engine
 Deps: P1-06, P1-07 · Size: L · Status: todo · Gate: M1

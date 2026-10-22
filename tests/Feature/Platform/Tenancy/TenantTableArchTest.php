@@ -6,7 +6,10 @@ use App\Modules\Platform\Infrastructure\Concerns\BelongsToTenant;
 use App\Modules\Platform\Infrastructure\Models\LoginAttempt;
 use App\Modules\Platform\Infrastructure\Models\Organization;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\TenantArchScanner;
+
+uses(RefreshDatabase::class);
 
 it('every tenant table uses BelongsToTenant and every non-tenant model is on the exemption list', function (string $modelClass): void {
     /** @var Model $instance */

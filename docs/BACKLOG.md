@@ -287,9 +287,24 @@ Deps: P0-01 · Size: M · Status: done (branch `feat/p1-05-money`, last commit `
   - **Rounding rules documented in code and docs/**: `Money::DEFAULT_ROUNDING_MODE` const in code; `docs/MONEY.md` section 3 (Rounding) documents the policy with a domain table (default, tax-on-cash, final-invoice) and an anti-pattern warning against float math.
 
 ### P1-06 Property catalog
-Deps: P1-01, P1-03 · Size: L · Status: todo
+Deps: P1-01, P1-03 · Size: L · Status: done (branch `feat/p1-06-property-catalog`)
 - Properties, room types, room units, amenities, media (WebP optimization), policies, tax rules, timezone/currency/check-in times; Filament resources with i18n content.
 - Acceptance: CRUD with policies; media upload validated and optimized; tenant isolation tests pass.
+- **Closeout**:
+  - **Deliverables**:
+    - **Migrations**: `add_catalog_columns_to_properties_table`, `create_room_types_table`, `create_room_units_table`, `create_amenities_and_pivot_tables`, `create_catalog_tax_rules_table`, `create_property_policies_table`, `create_catalog_media_table`.
+    - **Domain (`app/Modules/Catalog/Domain/`)**: `PropertyStatus` enum, `PolicyType` enum, `Occupancy` value object, `BedConfig` value object.
+    - **Models & Infrastructure (`app/Modules/Catalog/Infrastructure/`)**: `Property` (full model), `RoomType`, `RoomUnit`, `Amenity`, `TaxRule`, `PropertyPolicy`, `CatalogMedia`. Services: `EloquentCatalogService`, `WebpMediaOptimizer` (WebP conversion + responsive dimension metadata extraction). `CatalogServiceProvider` registered in `bootstrap/providers.php`.
+    - **Contracts (`app/Modules/Catalog/Contracts/`)**: `CatalogService` interface and DTOs (`CatalogPropertyDTO`, `RoomTypeDTO`, `RoomUnitDTO`, `TaxRuleDTO`, `PropertyPolicyDTO`).
+    - **Application Actions (`app/Modules/Catalog/Application/Actions/`)**: `CreatePropertyAction`, `UpdatePropertyAction`, `CreateRoomTypeAction`, `UpdateRoomTypeAction`, `CreateRoomUnitAction`, `UpdateRoomUnitStatusAction`, `SetPropertyPolicyAction`, `CreateTaxRuleAction`, `UploadCatalogMediaAction`. All actions emit structured audit logs via `Auditor` port.
+    - **Http (`app/Modules/Catalog/Http/`)**: Controllers and FormRequests for Property, RoomType, RoomUnit, TaxRule, PropertyPolicy, and CatalogMedia upload with validation and RBAC permission checks.
+    - **Factories**: `AmenityFactory`, `PropertyPolicyFactory`, `RoomTypeFactory`, `RoomUnitFactory`, `TaxRuleFactory`.
+    - **Documentation**: `docs/CATALOG.md`.
+  - **Acceptance proof**:
+    - **CRUD with policies**: Covered by `tests/Feature/Catalog/PropertyCrudTest.php`, `tests/Feature/Catalog/RoomTypeAndUnitTest.php`, and `tests/Feature/Catalog/TaxRuleAndPolicyTest.php`.
+    - **Media upload validated and optimized**: Covered by `tests/Feature/Catalog/MediaUploadTest.php` (verifies WebP storage, dimension metadata extraction, and audit log generation).
+    - **Tenant isolation tests pass**: Covered by `tests/Feature/Catalog/CatalogTenantIsolationTest.php` and `tests/Feature/Platform/Tenancy/TenantTableArchTest.php` (verifies cross-org access prevention and `BelongsToTenant` scope on all catalog tables).
+  - **Verification**: `vendor/bin/pest` 375/375 passed (1782 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean, `npm run lint` clean.
 
 ### P1-07 Rate plans and prices
 Deps: P1-05, P1-06 · Size: L · Status: todo

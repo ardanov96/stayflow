@@ -328,9 +328,27 @@ Deps: P1-05, P1-06 · Size: L · Status: done (branch `feat/p1-07-rate-plans`)
   - **Verification**: `vendor/bin/pest` 397/397 passed (1858 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean, `npm run lint` clean.
 
 ### P1-08 Inventory days engine
-Deps: P1-06, P1-07 · Size: L · Status: todo · Gate: M1
+Deps: P1-06, P1-07 · Size: L · Status: done · Gate: M1
 - Schema from `docs/ARCHITECTURE.md` §5.1, rolling window materialization job, `quote()`, restrictions (min/max stay, CTA, CTD, stop-sell), `block/unblock`.
 - Acceptance: availability matches hand-computed fixtures; restrictions enforced; DB CHECK constraints present.
+- **Closeout**:
+  - **Deliverables**:
+    - **Migrations**: `2026_10_23_000001_create_inventory_days_table.php` (with CHECK constraint `total_units >= held_units + sold_units + blocked_units` and SQLite trigger), `2026_10_23_000002_create_restrictions_days_table.php`, `2026_10_23_000003_create_inventory_blocks_table.php`.
+    - **Domain (`app/Modules/Inventory/Domain/`)**: `InventoryWindow` helper (24 months rolling window), exceptions (`OutsideMaterializedWindowException`, `RestrictionViolationException`, `InsufficientInventoryException`, `InventoryBlockNotFoundException`).
+    - **Models & Infrastructure (`app/Modules/Inventory/Infrastructure/`)**: `InventoryDay` (with dynamic non-persisted `available_units` accessor), `RestrictionDay`, `InventoryBlock`. Ports: `InventoryDayRepository`, `RestrictionDayRepository`, `InventoryBlockRepository`. Implementations: `EloquentInventoryDayRepository`, `EloquentRestrictionDayRepository`, `EloquentInventoryBlockRepository`, `EloquentInventoryService`. Job: `MaterializeInventoryDaysJob` (queueable, tenant-context propagated). Registered in `InventoryServiceProvider`.
+    - **Contracts (`app/Modules/Inventory/Contracts/`)**: `InventoryService` interface, DTOs (`InventoryDayDTO`, `RestrictionDayDTO`, `InventoryBlockDTO`, `NightlyAvailabilityDTO`, `RoomTypeQuoteDTO`, `InventoryQuoteDTO`).
+    - **Application Actions (`app/Modules/Inventory/Application/Actions/`)**: `MaterializeInventoryDaysAction`, `BlockInventoryAction`, `UnblockInventoryAction`, `SetRestrictionsAction`, `QuoteInventoryAction`. Structured audit logs recorded via `Auditor` port.
+    - **Http (`app/Modules/Inventory/Http/`)**: `InventoryQuoteController`, `InventoryBlockController`, `RestrictionController`, FormRequests (`InventoryQuoteRequest`, `CreateInventoryBlockRequest`, `SetRestrictionsRequest`), and routes under `/api/inventory/` protected by RBAC permissions (`rate_plans.read`, `inventory.manage`, `restrictions.manage`).
+    - **Factories**: `InventoryDayFactory`, `RestrictionDayFactory`, `InventoryBlockFactory`.
+    - **Documentation**: `docs/INVENTORY.md`.
+  - **Acceptance proof**:
+    - **Availability matches hand-computed fixtures**: Covered by `tests/Feature/Inventory/InventoryDaysEngineTest.php` (verifies initial availability $10 - 0 = 10$, simulated holds/sales/blocks $10 - (2+3+1) = 4$, and preservation of state on re-materialization).
+    - **Restrictions enforced**: Covered by `tests/Feature/Inventory/RestrictionsTest.php` (verifies CTA on check-in date, CTD on check-out date, Stop Sell across stay dates, and Min/Max stay enforcement).
+    - **DB CHECK constraints present**: Covered by `tests/Feature/Inventory/InventoryDaysEngineTest.php` (asserts database exception / QueryException when `held + sold + blocked > total_units`).
+    - **Maintenance & Manual Blocks**: Covered by `tests/Feature/Inventory/InventoryDaysEngineTest.php` (asserts atomic increment/decrement of `blocked_units` and rejection of blocks exceeding available capacity).
+    - **Tenant isolation**: Covered by `tests/Feature/Inventory/InventoryTenantIsolationTest.php` and `tests/Feature/Platform/Tenancy/TenantTableArchTest.php` (16 models verified with `BelongsToTenant`).
+    - **API & RBAC**: Covered by `tests/Feature/Inventory/InventoryQuoteApiTest.php` (quotes, blocks, and restrictions guarded by fine-grained permissions).
+  - **Verification**: `vendor/bin/pest` 413/413 passed (1920 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean, `npm run lint` clean.
 
 ### P1-09 Holds: hold, commit, release, expire
 Deps: P1-08 · Size: L · Status: todo · Gate: M1

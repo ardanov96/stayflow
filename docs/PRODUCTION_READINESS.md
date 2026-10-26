@@ -3,6 +3,11 @@
 Every item must be checked, with evidence (link to PR, report, dashboard, or drill log), before gate **M6** (pilot go-live).
 Items marked ★ are required even for the first pilot with a single hotel. Related tasks in `docs/BACKLOG.md`.
 
+**Status as of 2026-10-26.** 13 tasks are done (P0-01, P0-02, P0-05, P0-07, P0-10, P1-01…P1-08). The `Done`
+cell carries the task ID plus the evidence behind the tick, and an open cell states *why* it is still open, so
+this checklist works as gate evidence instead of a blank grid. It is updated at task closeout, not only before
+M5/M6.
+
 Legend — Owner: TL = tech lead, BE = backend, FE = frontend, QA, OPS = DevOps, PO = product owner, LEGAL = counsel/human.
 
 ## Known scope gaps (deferred from MVP per `docs/ROADMAP.md` §7)
@@ -18,13 +23,13 @@ These items are explicitly **out of MVP scope** and must not block M6. They are 
 |---|---|---|---|---|
 | SEC-01 ★ | OWASP Top 10 review completed and findings triaged | TL | P6-02 | [ ] |
 | SEC-02 ★ | External penetration test done; no open critical/high findings | TL | P6-02 | [ ] |
-| SEC-03 ★ | 2FA enforced for owner/manager roles | BE | P1-02 | [ ] |
-| SEC-04 ★ | Tenant isolation suite green for every tenant table | BE | P1-01 | [ ] |
+| SEC-03 ★ | 2FA enforced for owner/manager roles | BE | P1-02, P1-03 | [x] P1-02/P1-03 — `Role::requiresTwoFactor()` (owner, manager), `User::requiresTwoFactor()`, `EnsureTwoFactorIsConfirmed` applied to the `/app` route group |
+| SEC-04 ★ | Tenant isolation suite green for every tenant table | BE | P1-01 | [x] P1-01 — `tests/Feature/Platform/Tenancy/TenantTableArchTest.php` plus the isolation suite |
 | SEC-05 ★ | Sensitive guest fields encrypted at rest; keys outside repo | BE | P2-07 | [ ] |
 | SEC-06 ★ | Secrets in host secret store; rotation procedure documented | OPS | P6-05 | [ ] |
 | SEC-07 ★ | WAF, HSTS, CSP, secure cookies enabled | OPS | P0-06 | [ ] |
 | SEC-08 | Rate limiting on auth, public API, webhooks verified by tests | BE | P3-01, P3-11 | [ ] |
-| SEC-09 ★ | Dependency audit and secret scan clean in CI | OPS | P0-01 | [ ] |
+| SEC-09 ★ | Dependency audit and secret scan clean in CI | OPS | P0-01 | [x] P0-01 — `composer audit` and gitleaks run in `.github/workflows/ci.yml` |
 | SEC-10 ★ | Webhook signature verification and replay protection tested | BE | P3-04, P4-05 | [ ] |
 | SEC-11 | Support/impersonation access audited and time-limited | BE | P1-04 | [ ] |
 
@@ -52,15 +57,15 @@ These items are explicitly **out of MVP scope** and must not block M6. They are 
 | REL-05 ★ | Channel reconciliation shows no unexplained drift for 2 weeks | BE | P4-10 | [ ] |
 | REL-06 ★ | Overbooking and quarantine workflows exercised | QA | P4-06 | [ ] |
 | REL-07 | Circuit breaker pauses and recovers on provider outage (game day) | BE | P4-09 | [ ] |
-| REL-08 | Migrations backward compatible with previous release (verified on staging) | BE | all | [ ] |
+| REL-08 | Migrations backward compatible with previous release (verified on staging) | BE | all | [ ] Not verifiable yet — no staging environment exists (P0-06). |
 | REL-09 | Hold-expiry job monitored; double-run safety verified | BE | P1-10 | [ ] |
 
 ## Observability (OBS)
 
 | ID | Requirement | Owner | Task | Done |
 |---|---|---|---|---|
-| OBS-01 ★ | Sentry captures app and worker errors with tenant context | OPS | P0-07 | [ ] |
-| OBS-02 ★ | Structured logs with request IDs; PII redaction verified | OPS | P0-07 | [ ] |
+| OBS-01 ★ | Sentry captures app and worker errors with tenant context | OPS | P1-16 | [ ] Not implemented: the package is auto-discovered but no `config/sentry.php` is published and no tenant context is attached, so events cannot be attributed to a tenant. Deferred from P0-07 to P1-01, not delivered there — now tracked as **P1-16**. |
+| OBS-02 ★ | Structured logs with request IDs; PII redaction verified | OPS | P0-07 | [x] P0-07 — `RequestIdProcessor` and `PiiScrubberProcessor` |
 | OBS-03 ★ | Alerts: sync failing, drift, quarantine, payment webhook failures, queue depth, hold expiry stalled | OPS | P6-04 | [ ] |
 | OBS-04 ★ | Uptime checks: app, public API, widget loader, webhook endpoints | OPS | P6-04 | [ ] |
 | OBS-05 | Public status page live | OPS | P6-04 | [ ] |

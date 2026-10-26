@@ -18,7 +18,7 @@ Applies to humans and AI agents alike. Where a rule says "CI enforces", a failin
    Full policy and the rounding/tax rules live in `docs/MONEY.md`. Money is
    represented by `App\Support\Money\Money`; tax and service charge by
    `App\Support\Money\TaxRule` and `App\Support\Money\TaxCalculator`.
-2. **Time:** store UTC timestamps; stay dates are `DATE` in the property's timezone; use helpers from P1-12; never format dates by hand.
+2. **Time:** store UTC timestamps; stay dates are `DATE` in the property's timezone; use the date/time helpers from **P1-12** (pending — until it lands, keep stay-date arithmetic inside `App\Support`); never format dates by hand.
 3. **Migrations:**
    - Never edit a migration that has shipped; add a new one.
    - Expand → migrate → contract: every migration must be compatible with the previous app release.
@@ -92,7 +92,7 @@ Rules:
 ## 7. Frontend standards
 
 1. TypeScript strict; `<script setup lang="ts">`; props and emits typed.
-2. All user-facing strings via i18n keys; CI checks missing keys for `id` and `en`.
+2. All user-facing strings via i18n keys; CI checks missing keys for `id`, `en`, and `zh` (OQ-06) via `npm run lint:i18n` (`scripts/check-i18n-keys.mjs`), which compares every locale file in `lang/` and `resources/js/locales/`.
 3. Server is the source of truth; optimistic UI only where rollback is implemented and tested.
 4. Accessibility: semantic HTML, keyboard operable, visible focus, color contrast AA, ARIA only where needed; axe checks in E2E.
 5. Performance: lazy-load heavy views, virtualize large grids, avoid layout thrash; the widget respects its size budget (ADR-0007).

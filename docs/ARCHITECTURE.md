@@ -1,6 +1,10 @@
 # ARCHITECTURE
 
-Status: **proposed**; items marked ADR-xxxx are tracked in `docs/DECISIONS.md`.
+Status: **accepted for P1-01…P1-08** — §3 module boundaries, §4 tenancy, §5.1 inventory schema, and §5.2
+availability are implemented and tested. §5.3 (`hold()` / `commit()` / `release()`) is **specified but not yet
+implemented** — it lands with P1-09, and the concurrency proofs in §5.5 land with P1-10 (both gate M1). §7
+booking flow, §8 folio, and §9 distribution remain **proposed** until P2/P4 validate them. Items marked
+ADR-xxxx are tracked in `docs/DECISIONS.md`.
 Diagrams use Mermaid (render in GitHub or any Mermaid viewer).
 
 ## 1. Principles
@@ -99,6 +103,10 @@ Rows are **pre-materialized** by a scheduled job for a rolling window (default 2
 | `block/unblock(room_type, range, units, reason)` | Maintenance or manual stop |
 
 ### 5.3 Concurrency algorithm
+
+> **Implementation status:** specified only. `hold()` / `commit()` / `release()` and the expiry job land with
+> **P1-09**; the concurrency proofs land with **P1-10** (both gate **M1**). See `docs/INVENTORY.md` for what
+> P1-08 already ships.
 
 1. `BEGIN`
 2. `SELECT … FROM inventory_days WHERE room_type_id IN (…) AND date BETWEEN … ORDER BY room_type_id, date FOR UPDATE` — **always the same order** to avoid deadlocks.

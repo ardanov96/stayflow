@@ -32,9 +32,10 @@ Deps: — · Size: M · Status: todo
 - Acceptance: signed-off ERD in `docs/`, open questions answered or logged in `docs/DECISIONS.md` §3.
 
 ### P0-04 Vendor selection ADRs [human]
-Deps: — · Size: M · Status: todo
+Deps: — · Size: M · Status: blocked (human: sandbox credentials)
 - Evaluate channel aggregator, payment gateway, email provider (sandbox access, pricing, API fit). Record ADR-0004, ADR-0005, ADR-0011.
 - Acceptance: three ADRs moved from `proposed` to `accepted`, sandbox credentials available to the team (never committed).
+- **Partial (2026-10-26):** the ADR half of this task is complete — ADR-0004 (Channex), ADR-0005 (Xendit), and ADR-0011 (Postmark) are `accepted` in `docs/DECISIONS.md`. What remains is human-owned: issuing the sandbox credentials to the team (never committed). The task stays `blocked`, not `done`; agents must not close it.
 
 ### P0-05 UI shell, design tokens, i18n scaffolding
 Deps: P0-01 · Size: M · Status: done
@@ -83,8 +84,8 @@ Deps: P0-01 · Size: S · Status: done
 
 ## P1 — Platform core & inventory engine (weeks 3–6)
 
-Status: **done** (closed on branch `feat/p1-01-tenancy`; 9 commits + 1 docs commit, 1 docs polish; ready to open a PR against `main`)
-Deps: P0-01 · Size: L · Status: in-progress (branch `feat/p1-01-tenancy`)
+### P1-01 Tenancy
+Deps: P0-01 · Size: L · Status: done (branch `feat/p1-01-tenancy`, 10 commits, merged as `c615df9`)
 - Organizations, properties, `BelongsToTenant` global scope, tenant-aware queues/jobs, tenant-aware cache keys.
 - Isolation test helper that iterates every tenant table and proves cross-tenant read/update/delete is impossible via web, API, and jobs.
 - Acceptance: adding a tenant table without `organization_id` or without the scope fails a CI test.
@@ -367,6 +368,11 @@ Deps: P0-02 · Size: S · Status: todo
 Deps: P1-12 · Size: M · Status: todo
 - Channels (mail now, WhatsApp-ready), templates per locale, delivery log, bounce/complaint webhook intake from the email provider.
 - Acceptance: template rendering tests per locale; failed delivery recorded and visible.
+
+### P1-16 Tenant-aware error reporting context
+Deps: P0-07, P1-01 · Size: S · Status: todo
+- Publish `config/sentry.php` and attach tenant context (`organization_id`, `property_id`) to Sentry events raised in HTTP requests **and** queued jobs, via a `before_send` hook or a context callback. Today the package is auto-discovered but no context is attached, so error reports cannot be attributed to a tenant — the gap was deferred from P0-07 to P1-01, was not delivered there, and is tracked in `docs/PRODUCTION_READINESS.md` (OBS-01).
+- Acceptance: a test raises an exception inside a tenant-scoped request and inside a tenant-scoped job and asserts the captured event carries `organization_id` and `property_id`; no guest PII (name, email, document number) is attached.
 
 ---
 

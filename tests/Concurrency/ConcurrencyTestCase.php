@@ -41,6 +41,12 @@ abstract class ConcurrencyTestCase extends TestCase
 
     protected string $checkOut;
 
+    /**
+     * Whether the suite could reach the server and build its schema.
+     * The cleanup only runs when it did.
+     */
+    private bool $concurrencyReady = false;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -51,6 +57,8 @@ abstract class ConcurrencyTestCase extends TestCase
         DB::purge(ConcurrencyConnection::NAME);
 
         ConcurrencySchema::prepare();
+
+        $this->concurrencyReady = true;
 
         $this->context = app(OrganizationContext::class);
         $this->inventoryService = app(InventoryService::class);
@@ -71,7 +79,9 @@ abstract class ConcurrencyTestCase extends TestCase
 
     protected function tearDown(): void
     {
-        $this->truncateAll();
+        if ($this->concurrencyReady) {
+            $this->truncateAll();
+        }
 
         parent::tearDown();
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Concurrency\Support;
 
 use Illuminate\Support\Facades\DB;
+use PDO;
 use RuntimeException;
 use Throwable;
 
@@ -78,8 +79,43 @@ final class ConcurrencyConnection
      */
     public static function isReachable(): bool
     {
+        $config = self::config();
+
+        // A `url` connection carries everything the DSN needs; let the
+        // framework build it.
+        if (! empty($config['url'])) {
+            try {
+                DB::connection(self::NAME)->getPdo();
+
+                return true;
+            } catch (Throwable) {
+                return false;
+            }
+        }
+
+        $socket = (string) ($config['unix_socket'] ?? '');
+
+        $dsn = $socket !== ''
+            ? sprintf('mysql:unix_socket=%s;dbname=%s', $socket, (string) $config['database'])
+            : sprintf(
+                'mysql:host=%s;port=%s;dbname=%s',
+                (string) $config['host'],
+                (string) $config['port'],
+                (string) $config['database'],
+            );
+
         try {
-            DB::connection(self::NAME)->getPdo();
+            // A short connect timeout: the probe must not hang when the
+            // server is not there.
+            new PDO(
+                $dsn,
+                (string) $config['username'],
+                (string) $config['password'],
+                [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_TIMEOUT => 3,
+                ],
+            );
 
             return true;
         } catch (Throwable) {

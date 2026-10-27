@@ -13,8 +13,13 @@ use Throwable;
  * transaction won the race on the idempotency key.
  *
  * The retry is safe because the callback is idempotent by construction:
- * it locks the idempotency row first and the inventory rows afterwards,
- * in that fixed order.
+ * it claims the idempotency key first (with an INSERT) and the inventory
+ * rows afterwards, in that fixed order.
+ *
+ * A duplicate idempotency key is deliberately NOT retried here: the same
+ * statement would fail the same way. The caller resolves the winner
+ * instead (see `HoldInventoryAction`), so the violation is rethrown
+ * immediately.
  */
 trait RetriesOnContention
 {
@@ -34,17 +39,18 @@ trait RetriesOnContention
             try {
                 return $callback();
             } catch (Throwable $e) {
+                // A lost idempotency race is not contention: the winner
+                // is already committed and the same INSERT would fail
+                // again. The caller resolves it.
+                if (ContentionDetector::isDuplicateIdempotencyKey($e)) {
+                    throw $e;
+                }
+
                 if (! ContentionDetector::isRetryable($e)) {
                     throw $e;
                 }
 
                 if ($attempt >= $maxAttempts) {
-                    if (ContentionDetector::isDuplicateIdempotencyKey($e)) {
-                        // The caller decides what a lost idempotency race
-                        // means (usually: return the winning hold).
-                        throw $e;
-                    }
-
                     throw InventoryContentionException::afterRetries($maxAttempts);
                 }
 

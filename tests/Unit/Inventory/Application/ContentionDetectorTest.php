@@ -46,6 +46,42 @@ it('detects the idempotency key collision', function (): void {
         ->and(ContentionDetector::isRetryable($exception))->toBeTrue();
 });
 
+it('does not treat a duplicate on another index as a lost idempotency race', function (): void {
+    $pdo = new PDOException(
+        "SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '1' "
+        ."for key 'inventory_hold_lines.inventory_hold_lines_hold_date_unique'"
+    );
+    $pdo->errorInfo = ['23000', 1062, 'Duplicate entry'];
+
+    $exception = new UniqueConstraintViolationException(
+        'mysql',
+        'insert into inventory_hold_lines ...',
+        [],
+        $pdo,
+    );
+
+    // A real conflict must never be swallowed as a replay.
+    expect(ContentionDetector::isDuplicateIdempotencyKey($exception))->toBeFalse()
+        ->and(ContentionDetector::isRetryable($exception))->toBeFalse();
+});
+
+it('detects the idempotency key collision reported by sqlite', function (): void {
+    $pdo = new PDOException(
+        'SQLSTATE[23000]: Integrity constraint violation: 19 UNIQUE constraint failed: '
+        .'inventory_holds.organization_id, inventory_holds.idempotency_key'
+    );
+    $pdo->errorInfo = ['23000', 19, 'UNIQUE constraint failed'];
+
+    $exception = new UniqueConstraintViolationException(
+        'sqlite',
+        'insert into inventory_holds ...',
+        [],
+        $pdo,
+    );
+
+    expect(ContentionDetector::isDuplicateIdempotencyKey($exception))->toBeTrue();
+});
+
 it('ignores unrelated failures', function (): void {
     expect(ContentionDetector::isRetryable(new RuntimeException('boom')))->toBeFalse()
         ->and(ContentionDetector::isDeadlock(new RuntimeException('boom')))->toBeFalse()

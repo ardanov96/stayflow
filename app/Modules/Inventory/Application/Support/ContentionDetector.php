@@ -35,6 +35,11 @@ final class ContentionDetector
      */
     private const IDEMPOTENCY_INDEX = 'inventory_holds_org_idempotency_unique';
 
+    /**
+     * Name of the table that owns the idempotency key.
+     */
+    private const IDEMPOTENCY_TABLE = 'inventory_holds';
+
     public static function isDeadlock(Throwable $e): bool
     {
         if ($e instanceof DeadlockException) {
@@ -64,21 +69,43 @@ final class ContentionDetector
     /**
      * Whether the failure is the unique index on the idempotency key:
      * another request committed the same key first.
+     *
+     * The detection is deliberately narrow: only the
+     * `(organization_id, idempotency_key)` unique index counts. A
+     * duplicate on any other index is a real conflict, not a lost race,
+     * and must never be swallowed as a replay.
+     *
+     * MySQL names the index ("for key
+     * 'inventory_holds.inventory_holds_org_idempotency_unique'"); SQLite
+     * names the table and the column ("UNIQUE constraint failed:
+     * inventory_holds.organization_id, inventory_holds.idempotency_key").
      */
     public static function isDuplicateIdempotencyKey(Throwable $e): bool
     {
-        if (! $e instanceof UniqueConstraintViolationException) {
+        if (! $e instanceof QueryException) {
             return false;
         }
 
         $message = $e->getMessage();
 
-        return str_contains($message, self::IDEMPOTENCY_INDEX)
-            || str_contains($message, 'idempotency_key');
+        if (str_contains($message, self::IDEMPOTENCY_INDEX)) {
+            return true;
+        }
+
+        if (! $e instanceof UniqueConstraintViolationException) {
+            return false;
+        }
+
+        return str_contains($message, self::IDEMPOTENCY_TABLE)
+            && str_contains($message, 'idempotency_key');
     }
 
     /**
-     * Whether the transaction may be retried as-is.
+     * Whether the failure is recoverable at all.
+     *
+     * A duplicate idempotency key is recoverable, but NOT by replaying
+     * the same statement: the winner has to be resolved instead. See
+     * {@see RetriesOnContention}.
      */
     public static function isRetryable(Throwable $e): bool
     {

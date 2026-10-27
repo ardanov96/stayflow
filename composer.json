@@ -68,7 +68,8 @@
         "stan": [
             "@php vendor/bin/phpstan analyse --memory-limit=1G --no-progress"
         ],
-        "test": "@php vendor/bin/pest --colors=always",
+        "test": "@php vendor/bin/pest --testsuite=Unit,Feature,Arch --colors=always",
+        "concurrency": "@php vendor/bin/pest --testsuite=Concurrency --colors=always",
         "audit": "composer audit",
         "ci": [
             "@lint:check",

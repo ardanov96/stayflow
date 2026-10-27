@@ -64,6 +64,42 @@ return [
             ]) : [],
         ],
 
+        /*
+        |----------------------------------------------------------------------
+        | Concurrency Test Connection
+        |----------------------------------------------------------------------
+        |
+        | The concurrency suite (task P1-10, docs/CONCURRENCY.md) needs a real
+        | MySQL 8 server: SQLite serializes writes and would hide every race
+        | the suite exists to catch. The connection points at a dedicated
+        | database, so the suite can drop and rebuild its schema without
+        | touching the development or test data.
+        |
+        | The suite is opt-in: without a reachable server it skips itself
+        | (see Tests\Concurrency\Support\ConcurrencyConnection).
+        |
+        */
+
+        'concurrency' => [
+            'driver' => 'mysql',
+            'url' => env('CONCURRENCY_DB_URL'),
+            'host' => env('CONCURRENCY_DB_HOST', '127.0.0.1'),
+            'port' => env('CONCURRENCY_DB_PORT', '3307'),
+            'database' => env('CONCURRENCY_DB_DATABASE', 'stayflow_concurrency'),
+            'username' => env('CONCURRENCY_DB_USERNAME', 'root'),
+            'password' => env('CONCURRENCY_DB_PASSWORD', ''),
+            'unix_socket' => env('CONCURRENCY_DB_SOCKET', ''),
+            'charset' => env('DB_CHARSET', 'utf8mb4'),
+            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),

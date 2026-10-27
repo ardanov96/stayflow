@@ -130,3 +130,66 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  concurrency:
+    name: concurrency (MySQL 8)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: stayflow_concurrency
+        ports:
+          - 3306:3306
+        # max_connections caps the number of simultaneous worker sessions.
+        # The default (151) is enough for the configured worker count; the
+        # server is opened up so the count can be raised without a change.
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=5s
+          --health-timeout=2s
+          --health-retries=10
+          --max-connections=1000
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+          extensions: mbstring, pdo_mysql, zip
+          tools: composer:v2
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Copy .env
+        run: cp .env.example .env
+
+      - name: Generate app key
+        run: php artisan key:generate --ansi
+
+      - name: Concurrency suite (P1-10)
+        env:
+          # The suite is required here: a missing MySQL server must fail
+          # the build, not skip it.
+          CONCURRENCY_TESTS: 1
+          CONCURRENCY_DB_HOST: 127.0.0.1
+          CONCURRENCY_DB_PORT: 3306
+          CONCURRENCY_DB_DATABASE: stayflow_concurrency
+          CONCURRENCY_DB_USERNAME: root
+          CONCURRENCY_DB_PASSWORD: root
+          CONCURRENCY_WORKERS: 32
+          CONCURRENCY_ATTEMPTS: 500
+        run: composer concurrency

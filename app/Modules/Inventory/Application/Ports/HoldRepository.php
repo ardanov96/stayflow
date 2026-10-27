@@ -21,14 +21,6 @@ interface HoldRepository
     public function findByIdempotencyKey(int $organizationId, string $idempotencyKey): ?InventoryHoldDTO;
 
     /**
-     * Lock the hold row that owns the idempotency key (FOR UPDATE).
-     *
-     * The idempotency row is always locked BEFORE the inventory day
-     rows, so concurrent writers take the locks in the same order.
-     */
-    public function findByIdempotencyKeyForUpdate(int $organizationId, string $idempotencyKey): ?InventoryHoldDTO;
-
-    /**
      * @param  array<string, mixed>  $data
      */
     public function create(array $data): InventoryHoldDTO;
@@ -44,16 +36,25 @@ interface HoldRepository
     public function linesFor(int $organizationId, int $holdId): array;
 
     /**
-     * Move the hold from one status to another, but only when it is
-     * still in the expected source status.
+     * Move the hold out of the `active` status, but only when it is
+     * still active.
+     *
+     * The UPDATE is guarded by the current status, so exactly one of the
+     * concurrent callers performs the transition. The caller uses the
+     * return value to decide whether it owns the follow-up counter
+     * mutation: the winner mutates the counters, the losers do not.
+     *
+     * There is deliberately no variant that takes the source status as
+     * an argument: the only legal source of a terminal transition is
+     * `active`, and hard-coding it removes the chance of a caller
+     * guarding on the wrong status.
      *
      * @param  array<string, mixed>  $attributes
-     * @return bool True when the hold was transitioned.
+     * @return bool True when this caller performed the transition.
      */
-    public function transition(
+    public function transitionFromActive(
         int $organizationId,
         int $holdId,
-        HoldStatus $from,
         HoldStatus $to,
         array $attributes = [],
     ): bool;

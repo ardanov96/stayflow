@@ -77,12 +77,16 @@ final readonly class ExpireHoldsAction
                 }
 
                 $dates = $this->holdDates($this->holdRepository, $organizationId, $hold);
-                $this->inventoryDayRepository->decrementHeldUnits($hold->roomTypeId, $dates, $hold->units);
 
-                $transitioned = $this->holdRepository->transition(
+                // The guarded transition comes FIRST: it is the gate for
+                // the counter mutation. Exactly one concurrent caller
+                // wins it, and only the winner gives the units back. A
+                // caller that loses the race returns `false` with the
+                // counters untouched — the units are returned once, by
+                // the winner, even when the expiry job runs twice.
+                $transitioned = $this->holdRepository->transitionFromActive(
                     $organizationId,
                     $hold->id,
-                    HoldStatus::Active,
                     HoldStatus::Expired,
                     ['expired_at' => now()],
                 );
@@ -90,6 +94,8 @@ final readonly class ExpireHoldsAction
                 if (! $transitioned) {
                     return false;
                 }
+
+                $this->inventoryDayRepository->decrementHeldUnits($hold->roomTypeId, $dates, $hold->units);
 
                 $this->auditor->recordCustom(
                     'inventory.hold.expired',

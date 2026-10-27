@@ -60,12 +60,14 @@ final readonly class ReleaseHoldAction
                 }
 
                 $dates = $this->holdDates($this->holdRepository, $organizationId, $hold);
-                $this->inventoryDayRepository->decrementHeldUnits($hold->roomTypeId, $dates, $hold->units);
 
-                $transitioned = $this->holdRepository->transition(
+                // The guarded transition comes FIRST: it is the gate for
+                // the counter mutation. Exactly one concurrent caller
+                // wins it, and only the winner gives the units back. If
+                // the transition fails, the counters are still untouched.
+                $transitioned = $this->holdRepository->transitionFromActive(
                     $organizationId,
                     $holdId,
-                    HoldStatus::Active,
                     HoldStatus::Released,
                     [
                         'released_at' => now(),
@@ -76,6 +78,8 @@ final readonly class ReleaseHoldAction
                 if (! $transitioned) {
                     throw HoldStateException::invalidTransition($status, 'release');
                 }
+
+                $this->inventoryDayRepository->decrementHeldUnits($hold->roomTypeId, $dates, $hold->units);
 
                 $this->auditor->recordCustom(
                     'inventory.hold.released',

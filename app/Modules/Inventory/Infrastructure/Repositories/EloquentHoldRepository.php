@@ -48,18 +48,6 @@ final class EloquentHoldRepository implements HoldRepository
         return $model !== null ? $this->toDTO($model) : null;
     }
 
-    public function findByIdempotencyKeyForUpdate(int $organizationId, string $idempotencyKey): ?InventoryHoldDTO
-    {
-        /** @var InventoryHold|null $model */
-        $model = InventoryHold::query()
-            ->where('organization_id', $organizationId)
-            ->where('idempotency_key', $idempotencyKey)
-            ->lockForUpdate()
-            ->first();
-
-        return $model !== null ? $this->toDTO($model) : null;
-    }
-
     public function create(array $data): InventoryHoldDTO
     {
         /** @var InventoryHold $model */
@@ -105,10 +93,9 @@ final class EloquentHoldRepository implements HoldRepository
         return $lines;
     }
 
-    public function transition(
+    public function transitionFromActive(
         int $organizationId,
         int $holdId,
-        HoldStatus $from,
         HoldStatus $to,
         array $attributes = [],
     ): bool {
@@ -120,7 +107,7 @@ final class EloquentHoldRepository implements HoldRepository
         $updated = InventoryHold::query()
             ->where('organization_id', $organizationId)
             ->where('id', $holdId)
-            ->where('status', $from->value)
+            ->where('status', HoldStatus::Active->value)
             ->update($values);
 
         return $updated > 0;

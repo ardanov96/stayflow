@@ -59,12 +59,14 @@ final readonly class CommitHoldAction
                 }
 
                 $dates = $this->holdDates($this->holdRepository, $organizationId, $hold);
-                $this->inventoryDayRepository->convertHeldUnitsToSold($hold->roomTypeId, $dates, $hold->units);
 
-                $transitioned = $this->holdRepository->transition(
+                // The guarded transition comes FIRST: it is the gate for
+                // the counter mutation. Exactly one concurrent caller
+                // wins it, and only the winner converts the held units
+                // into sold units.
+                $transitioned = $this->holdRepository->transitionFromActive(
                     $organizationId,
                     $holdId,
-                    HoldStatus::Active,
                     HoldStatus::Committed,
                     [
                         'reservation_id' => $reservationId,
@@ -75,6 +77,8 @@ final readonly class CommitHoldAction
                 if (! $transitioned) {
                     throw HoldStateException::invalidTransition($status, 'commit');
                 }
+
+                $this->inventoryDayRepository->convertHeldUnitsToSold($hold->roomTypeId, $dates, $hold->units);
 
                 $this->auditor->recordCustom(
                     'inventory.hold.committed',

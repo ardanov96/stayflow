@@ -15,11 +15,18 @@ return new class extends Migration
      * in the organization" (e.g. a group owner).
      *
      * Uniqueness per (user, organization, property) is enforced by a
-     * UNIQUE index on a stored generated column `property_id_key` that
+     * UNIQUE index on a VIRTUAL generated column `property_id_key` that
      * maps NULL to 0. This works around the SQL standard that treats
      * NULL as distinct in UNIQUE constraints (so two (user, org, NULL)
      * rows would otherwise be allowed). 0 is never a real property id
      * (auto-increment starts at 1), so the sentinel is safe.
+     *
+     * The column is VIRTUAL, not STORED: MySQL refuses a foreign key
+     * whose ON DELETE referential action is CASCADE, SET NULL or SET
+     * DEFAULT when the referencing column is the base column of a
+     * STORED generated column ("Cannot add foreign key constraint",
+     * error 1215). A VIRTUAL column keeps `ON DELETE SET NULL` legal
+     * and still supports the unique index.
      *
      * ON DELETE RESTRICT on user and organization protects against
      * accidental hard deletes. ON DELETE SET NULL on property lets a
@@ -45,7 +52,7 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->bigInteger('property_id_key')
-                ->storedAs('COALESCE(property_id, 0)');
+                ->virtualAs('COALESCE(property_id, 0)');
 
             $table->unique(
                 ['user_id', 'organization_id', 'property_id_key'],

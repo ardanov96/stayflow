@@ -40,7 +40,7 @@ For each task in `docs/BACKLOG.md`:
 3. **Plan** in the PR description: files you will touch, migrations, risks. For tasks sized `L`, post the plan first and wait for approval when a human is available.
 4. **Branch**: `feat/<task-id>-<slug>` (for example `feat/P1-08-inventory-days`).
 5. **Implement** in small commits using Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`, `chore:`, `refactor:`).
-6. **Verify** locally: `composer ci` must pass (format check, static analysis, architecture tests, unit and feature tests). Frontend: `npm run lint && npm run test && npm run build`.
+6. **Verify** locally: `composer ci` must pass (format check, static analysis, architecture tests, unit and feature tests). Frontend: `npm run lint && npm run test && npm run build`. When the task touches inventory concurrency, `composer concurrency` must pass too (it needs a real MySQL 8 server, see `docs/CONCURRENCY.md`).
 7. **Prove acceptance**: map each acceptance bullet in the task to a test or a documented manual check in the PR.
 8. **Finish**: tick the Definition of Done (`docs/ENGINEERING_STANDARDS.md` §9), set status `done` (or `blocked` with the reason), open the PR.
 
@@ -81,6 +81,7 @@ Architecture tests enforce this (task P0-10).
 |---|---|
 | `make setup` | Fresh environment: containers, migrate, seed |
 | `composer ci` | Pint (check), PHPStan, Pest arch tests, Pest unit and feature tests |
+| `composer concurrency` | Pest concurrency suite (real MySQL 8, task P1-10, see `docs/CONCURRENCY.md`) |
 | `php artisan test --parallel` | Test suite |
 | `vendor/bin/pint` | Auto-format |
 | `vendor/bin/phpstan analyse` | Static analysis |

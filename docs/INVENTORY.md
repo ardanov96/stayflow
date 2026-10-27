@@ -1,7 +1,8 @@
 # INVENTORY — Inventory Days Engine, Availability, Restrictions, Blocks & Holds
 
-Documentation for task `P1-08` (Inventory days engine) and `P1-09`
-(Holds: hold, commit, release, expire).
+Documentation for task `P1-08` (Inventory days engine), `P1-09`
+(Holds: hold, commit, release, expire) and `P1-10` (concurrency proofs,
+see `docs/CONCURRENCY.md`).
 
 ## 1. Overview & Source of Truth
 
@@ -169,20 +170,40 @@ The terminal states are final (`App\Modules\Inventory\Domain\Hold\HoldStatus`).
 ### 6.2 Concurrency algorithm (`docs/ARCHITECTURE.md` §5.3, ADR-0006)
 
 1. `BEGIN`.
-2. Lock the **idempotency row first** (`SELECT … FOR UPDATE` on
-   `inventory_holds` by `(organization_id, idempotency_key)`), then the
-   **inventory rows second** (`inventory_days` of the stay dates, ordered
-   by `room_type_id, date`). The order never changes, so concurrent
-   writers cannot deadlock against each other.
-3. Validate the availability against the locked rows. Available units are
+2. **Claim the idempotency key first**, with an `INSERT` into
+   `inventory_holds`. The unique index `inventory_holds_org_idempotency_unique`
+   is the arbiter: exactly one transaction can own a key.
+3. Lock the **inventory rows second** (`inventory_days` of the stay dates,
+   ordered by `room_type_id, date`). The order never changes, so
+   concurrent writers cannot deadlock against each other.
+4. Validate the availability against the locked rows. Available units are
    derived, never stored: `total_units − held_units − sold_units − blocked_units`.
-4. Update the counters and insert the hold lines.
-5. `COMMIT`, then publish `InventoryChanged` (after commit).
-6. On a deadlock or a lock-wait timeout, retry up to 3 times with a
+5. Update the counters and insert the hold lines.
+6. `COMMIT`, then publish `InventoryChanged` (after commit).
+7. On a deadlock or a lock-wait timeout, retry up to 3 times with a
    growing backoff (`RetriesOnContention`); after the last attempt the
    caller gets `InventoryContentionException` ("try again").
 
 Redis is never authoritative (ADR-0006): it may only reduce contention.
+
+The idempotency key is claimed with an `INSERT` and **not** with
+`SELECT … FOR UPDATE` on the key. Under `REPEATABLE READ` (the MySQL
+default) a locking read on a row that does not exist takes a gap lock on
+the index gap, so two transactions looking for the same missing key would
+deadlock instead of one of them simply winning. The `INSERT` claims the
+key atomically and never opens a gap. The loser of the race gets the
+unique-constraint violation *after* the winner committed, re-reads the
+winning hold and returns it.
+
+`commit`, `release` and `expire` leave the `active` status with a
+**guarded update** (`WHERE status = 'active'`). The guarded transition is
+the gate for the counter mutation: exactly one concurrent caller sees the
+row change, and only that caller gives the units back (or turns them into
+sold units). The counter update therefore always happens **after** the
+transition, never before it.
+
+The proofs live in `tests/Concurrency/` and are described in
+`docs/CONCURRENCY.md`.
 
 ### 6.3 Idempotency
 
@@ -200,6 +221,12 @@ The unique index `inventory_holds_org_idempotency_unique` is the last line
 of defence: when two requests race on the same key, the loser hits the
 unique-constraint violation, re-reads the winning hold and returns it
 instead of holding the units twice.
+
+Only that index counts as a lost race: `ContentionDetector` recognises the
+duplicate on `inventory_holds_org_idempotency_unique` and nothing else, so
+a duplicate on any other index is never swallowed as a replay. A duplicate
+idempotency key is **not** retried — the same `INSERT` would fail the same
+way — the winner is resolved instead.
 
 ### 6.4 Stay dates
 

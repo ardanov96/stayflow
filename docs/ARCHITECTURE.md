@@ -104,9 +104,9 @@ Rows are **pre-materialized** by a scheduled job for a rolling window (default 2
 
 ### 5.3 Concurrency algorithm
 
-> **Implementation status:** specified only. `hold()` / `commit()` / `release()` and the expiry job land with
-> **P1-09**; the concurrency proofs land with **P1-10** (both gate **M1**). See `docs/INVENTORY.md` for what
-> P1-08 already ships.
+  > **Implementation status:** shipped. `hold()` / `commit()` / `release()` and the expiry job land with
+  > **P1-09**; the concurrency proofs land with **P1-10** (both gate **M1**). See `docs/INVENTORY.md` for what
+  > P1-08 already ships and `docs/CONCURRENCY.md` for the proofs.
 
 1. `BEGIN`
 2. `SELECT … FROM inventory_days WHERE room_type_id IN (…) AND date BETWEEN … ORDER BY room_type_id, date FOR UPDATE` — **always the same order** to avoid deadlocks.

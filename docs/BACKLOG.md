@@ -375,9 +375,31 @@ Deps: P1-08 · Size: L · Status: done · Gate: M1
   - **Verification**: `vendor/bin/pest` 463/463 passed (2092 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean, `npm run lint` clean.
 
 ### P1-10 Concurrency and invariant test suite
-Deps: P1-09 · Size: M · Status: todo · Gate: M1
+Deps: P1-09 · Size: M · Status: done · Gate: M1
 - Tests from `docs/ARCHITECTURE.md` §5.5: 500 concurrent holds for the last unit → exactly 1 success; overlapping ranges without surfaced deadlocks; double-run expiry; property-based random sequences.
 - Acceptance: suite runs in CI (separate job allowed); results recorded in the PR. **Failure freezes all other modules.**
+  - **Closeout**:
+    - **Deliverables**:
+      - **Harness (`tests/Concurrency/`)**: `ConcurrencyTestCase` (MySQL connection, tenant fixtures, invariant helpers), `Support/WorkerPool` (runs the jobs in independent PHP processes), `Support/worker.php` (boots the app, points it at the concurrency connection, waits at the barrier, runs the operation), `Support/Barrier` (the database rendezvous that releases a whole wave at the same instant), `Support/ConcurrencyConnection` (the opt-in MySQL 8 connection and the gating), `Support/ConcurrencySchema` (rebuilds the schema from the real migrations), `Support/WorkerResult`.
+      - **Scenarios**: `LastUnitContentionTest`, `IdempotencyRaceTest`, `OverlappingRangesTest`, `DoubleExpiryTest`, `PropertySequenceTest`.
+      - **Inventory fixes (the races the suite exposed)**:
+        - `HoldRepository::transitionFromActive()` — a guarded `active → terminal` update (`WHERE status = 'active'`) that replaces the free-form `transition()`; the repository hard-codes the source status so a caller cannot guard on the wrong one.
+        - `ReleaseHoldAction`, `CommitHoldAction`, `ExpireHoldsAction` — the guarded transition now happens **before** the counter mutation, so only the winner of the race gives the units back (or turns them into sold units). The counter update after the transition is what makes "the units come back exactly once" true when the expiry job runs twice.
+        - `HoldInventoryAction` — the idempotency key is claimed with an `INSERT` instead of `SELECT … FOR UPDATE`: a locking read of a *missing* unique key takes an InnoDB gap lock, so a burst of concurrent holds deadlocked each other instead of one of them simply winning. The loser of the unique-index race now re-reads the winning hold, validates the payload and returns it (or raises `IdempotencyConflictException`).
+        - `ContentionDetector` — only the `inventory_holds_org_idempotency_unique` index counts as a lost race; a duplicate on any other index is a real conflict and is never swallowed as a replay.
+        - `RetriesOnContention` — a duplicate idempotency key is rethrown immediately instead of being retried (the same `INSERT` would fail the same way).
+      - **Infrastructure**: the `concurrency` connection in `config/database.php` and `.env.example`, the `Concurrency` suite in `phpunit.xml`, the `composer concurrency` command, and the dedicated `concurrency` job in `.github/workflows/ci.yml` (MySQL 8 service, `CONCURRENCY_TESTS=1` so a missing server fails the build).
+      - **Migration fix**: `memberships.property_id_key` is a **VIRTUAL** generated column, not a STORED one. MySQL 8 refuses a foreign key whose `ON DELETE SET NULL` referential action is used on the base column of a STORED generated column (error 1215), so the `memberships` table could not be created on MySQL at all.
+      - **Documentation**: `docs/CONCURRENCY.md` (the algorithm, the proofs, how to run the suite, its limits), `docs/INVENTORY.md` §6.2 and §6.3, `docs/ARCHITECTURE.md` §5.3, `AGENTS.md` §4 and §6.
+    - **Acceptance proof**:
+      - **500 concurrent `hold()` calls for the last unit → exactly 1 success**: Covered by `tests/Concurrency/LastUnitContentionTest.php` (500 calls over 32 barrier-synchronised workers; exactly one success, 499 `InsufficientInventoryException`, `held_units = 1`, one `active` hold) and by the second scenario of the same file (a burst on 3 units yields exactly 3 successes and never a negative availability).
+      - **Overlapping ranges without surfaced deadlocks**: Covered by `tests/Concurrency/OverlappingRangesTest.php` (6 room types, overlapping ranges, 32 workers: only `InsufficientInventoryException` reaches the caller — never `InventoryContentionException` — no negative availability, and the counters of every day equal the sum of the holds that cover it).
+      - **Double-run expiry**: Covered by `tests/Concurrency/DoubleExpiryTest.php` (32 concurrent expiry runs expire the hold exactly once and the units come back exactly once) and by its second scenario (release and expiry at the same time: the units come back exactly once, whoever wins).
+      - **Property-based random sequences**: Covered by `tests/Concurrency/PropertySequenceTest.php` (a seeded random sequence of hold/commit/release over 4 room types and 8 days; `held + sold + blocked <= total` and the counters equal the sum of the holds).
+      - **Idempotency under concurrency**: Covered by `tests/Concurrency/IdempotencyRaceTest.php` (32 concurrent replays of one key return the same hold and take the units once; a concurrent replay with a different payload raises `IdempotencyConflictException` and leaves the counters on the winning payload).
+      - **Unit proofs of the new behaviour**: Covered by `tests/Unit/Inventory/Application/ContentionDetectorTest.php` (a duplicate on another index is a real conflict, not a lost race) and `tests/Unit/Inventory/Application/RetriesOnContentionTest.php` (a deadlock is retried 3 times and then raises `InventoryContentionException`; a duplicate idempotency key is not retried at all).
+      - **Suite runs in CI**: the `concurrency` job of `.github/workflows/ci.yml` runs `composer concurrency` against a MySQL 8 service with `CONCURRENCY_TESTS=1` (a missing server fails the build) and `CONCURRENCY_ATTEMPTS=500`.
+  - **Verification**: `vendor/bin/pest --testsuite=Unit,Feature,Arch` 469/469 passed (2102 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean, `vendor/bin/pest --testsuite=Concurrency` 8/8 passed (3493 assertions) — 3 consecutive green runs with `CONCURRENCY_WORKERS=32` and `CONCURRENCY_ATTEMPTS=500` on MySQL 8.0.46.
 
 ### P1-11 SaaS subscription and plan gating
 Deps: P1-01, P0-04 · Size: L · Status: todo

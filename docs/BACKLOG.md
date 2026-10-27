@@ -351,9 +351,27 @@ Deps: P1-06, P1-07 · Size: L · Status: done · Gate: M1
   - **Verification**: `vendor/bin/pest` 413/413 passed (1920 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean, `npm run lint` clean.
 
 ### P1-09 Holds: hold, commit, release, expire
-Deps: P1-08 · Size: L · Status: in-progress · Gate: M1
+Deps: P1-08 · Size: L · Status: done · Gate: M1
 - `hold()` with deterministic lock order, retry on deadlock, idempotency key; `commit`, `release`, `cancel`; expiry job; `InventoryChanged` event emitted after commit.
 - Acceptance: algorithm matches `docs/ARCHITECTURE.md` §5.3; repeating a call with the same key returns the same hold.
+- **Closeout**:
+  - **Deliverables**:
+    - **Migrations**: `2026_10_26_000001_create_inventory_holds_table.php` (unique `(organization_id, idempotency_key)`, `status`, `expires_at`, nullable `reservation_id` without a foreign key until P2-01), `2026_10_26_000002_create_inventory_hold_lines_table.php` (one line per stay date, unique `(hold_id, date)`).
+    - **Domain (`app/Modules/Inventory/Domain/`)**: `Hold` entity, `HoldRequest` (validated stay request: property, room type, half-open date range, units, TTL), `HoldStatus` (`active` → `committed` | `released` | `expired`), `InventoryChanged` event (`ShouldDispatchAfterCommit`), exceptions (`HoldNotFoundException`, `HoldStateException`, `IdempotencyConflictException`, `InventoryContentionException`).
+    - **Models & Infrastructure (`app/Modules/Inventory/Infrastructure/`)**: `InventoryHold`, `InventoryHoldLine`; port `HoldRepository` + implementation `EloquentHoldRepository`; job `ExpireHoldsJob` (tries 3, backoff 10s, timeout 120s, tenant context propagated); `EloquentInventoryService` exposes `hold()`, `commitHold()`, `releaseHold()`, `getHold()`. The inventory day repository gained the `SELECT … FOR UPDATE` lock (ordered by `room_type_id, date`) and the `held_units` / `sold_units` counter operations.
+    - **Contracts (`app/Modules/Inventory/Contracts/`)**: `InventoryService` interface, DTOs (`InventoryHoldDTO`, `InventoryHoldLineDTO`).
+    - **Application Actions (`app/Modules/Inventory/Application/Actions/`)**: `HoldInventoryAction`, `CommitHoldAction`, `ReleaseHoldAction`, `ExpireHoldsAction`. Support traits: `RetriesOnContention` (3 attempts, growing backoff), `ContentionDetector` (MySQL 1213 / 1205, SQLSTATE 40001, duplicate idempotency key), `ResolvesHoldDates`. Structured audit logs recorded via `Auditor` port (`inventory.hold.created|committed|released|expired`).
+    - **Scheduler**: `php artisan inventory:expire-holds` fans one `ExpireHoldsJob` out per organization, scheduled every minute with `withoutOverlapping()` in `bootstrap/app.php`.
+    - **Factories**: `InventoryHoldFactory`.
+    - **Documentation**: `docs/INVENTORY.md` §6.
+    - **Out of scope**: `cancel(reservation)` gives back the **sold** units of a confirmed reservation and belongs to the Reservations module (P2-01) — the `reservations` table does not exist yet.
+  - **Acceptance proof**:
+    - **Algorithm matches `docs/ARCHITECTURE.md` §5.3** (deterministic lock order, retry on deadlock, `InventoryChanged` after commit): Covered by `tests/Feature/Inventory/HoldLifecycleTest.php` (hold → commit → release, the availability changes, and the rejected holds that must change nothing), `tests/Feature/Inventory/HoldEventDispatchTest.php` (the event is published only after the transaction committed) and `tests/Unit/Inventory/Application/ContentionDetectorTest.php` (deadlock, lock-wait timeout and duplicate-key detection).
+    - **Repeating a call with the same key returns the same hold**: Covered by `tests/Feature/Inventory/HoldIdempotencyTest.php` (the replay returns the existing hold and does not hold the units twice, a different payload raises `IdempotencyConflictException`, the key is scoped per organization, and empty or oversized keys are rejected).
+    - **Expiry**: Covered by `tests/Feature/Inventory/HoldExpiryTest.php` (the expiry gives the units back, a hold is never expired twice, an expired hold cannot be released) and `tests/Feature/Inventory/InventorySchedulerTest.php` (one expiry job per organization and the registered schedule).
+    - **Tenant isolation**: Covered by `tests/Feature/Inventory/HoldTenantIsolationTest.php` (another organization cannot read, commit, release, or expire the hold).
+    - **Domain rules**: Covered by `tests/Unit/Inventory/Domain/HoldTest.php` (the stay dates, the expiry moment, the payload comparison and the status transitions).
+  - **Verification**: `vendor/bin/pest` 463/463 passed (2092 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean, `npm run lint` clean.
 
 ### P1-10 Concurrency and invariant test suite
 Deps: P1-09 · Size: M · Status: todo · Gate: M1

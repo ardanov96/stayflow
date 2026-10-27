@@ -6,6 +6,7 @@ use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\SetLocale;
 use App\Modules\Platform\Http\Middleware\AuthorizePermission;
 use App\Modules\Platform\Http\Middleware\SetTenantContext;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,6 +17,19 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withSchedule(function (Schedule $schedule): void {
+        // Hold expiry: every minute, per organization (the command
+        // fans the work out so every job keeps its tenant context).
+        $schedule->command('inventory:expire-holds')
+            ->everyMinute()
+            ->withoutOverlapping();
+
+        // Inventory days are materialized for a rolling window; refresh
+        // them once a night so the next stay dates always exist.
+        $schedule->command('inventory:materialize-days')
+            ->dailyAt('02:00')
+            ->withoutOverlapping();
+    })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             AssignRequestId::class,

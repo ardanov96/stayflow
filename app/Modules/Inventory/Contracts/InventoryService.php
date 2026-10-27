@@ -6,6 +6,7 @@ namespace App\Modules\Inventory\Contracts;
 
 use App\Modules\Inventory\Contracts\DTOs\InventoryBlockDTO;
 use App\Modules\Inventory\Contracts\DTOs\InventoryDayDTO;
+use App\Modules\Inventory\Contracts\DTOs\InventoryHoldDTO;
 use App\Modules\Inventory\Contracts\DTOs\InventoryQuoteDTO;
 use App\Modules\Inventory\Contracts\DTOs\RestrictionDayDTO;
 
@@ -92,4 +93,45 @@ interface InventoryService
         ?string $endDate = null,
         ?array $roomTypeIds = null,
     ): int;
+
+    /**
+     * Place a temporary hold on inventory units.
+     *
+     * Idempotent per organization: replaying the same idempotency key
+     * with the same payload returns the existing hold without touching
+     * the counters; replaying it with a different payload is rejected.
+     */
+    public function hold(
+        int $propertyId,
+        int $roomTypeId,
+        string $checkIn,
+        string $checkOut,
+        int $units,
+        string $idempotencyKey,
+        ?int $ttlSeconds = null,
+        ?int $userId = null,
+    ): InventoryHoldDTO;
+
+    /**
+     * Commit a hold: the held units become sold units.
+     */
+    public function commitHold(
+        int $holdId,
+        ?int $reservationId = null,
+        ?int $userId = null,
+    ): InventoryHoldDTO;
+
+    /**
+     * Release a hold: the held units go back to availability.
+     */
+    public function releaseHold(
+        int $holdId,
+        ?string $reason = null,
+        ?int $userId = null,
+    ): InventoryHoldDTO;
+
+    /**
+     * Read a hold of the current organization.
+     */
+    public function getHold(int $holdId): ?InventoryHoldDTO;
 }

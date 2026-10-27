@@ -3,7 +3,7 @@
 Every item must be checked, with evidence (link to PR, report, dashboard, or drill log), before gate **M6** (pilot go-live).
 Items marked ★ are required even for the first pilot with a single hotel. Related tasks in `docs/BACKLOG.md`.
 
-**Status as of 2026-10-26.** 13 tasks are done (P0-01, P0-02, P0-05, P0-07, P0-10, P1-01…P1-08). The `Done`
+**Status as of 2026-10-27.** 15 tasks are done (P0-01, P0-02, P0-05, P0-07, P0-10, P1-01…P1-10). The `Done`
 cell carries the task ID plus the evidence behind the tick, and an open cell states *why* it is still open, so
 this checklist works as gate evidence instead of a blank grid. It is updated at task closeout, not only before
 M5/M6.
@@ -50,7 +50,7 @@ These items are explicitly **out of MVP scope** and must not block M6. They are 
 
 | ID | Requirement | Owner | Task | Done |
 |---|---|---|---|---|
-| REL-01 ★ | Inventory concurrency suite green (no oversell) | BE | P1-10 | [ ] |
+| REL-01 ★ | Inventory concurrency suite green (no oversell) | BE | P1-10 | [x] P1-10 — `composer concurrency` against MySQL 8: 500 concurrent holds for the last unit produce exactly 1 success; 4 green runs. See `docs/CONCURRENCY.md` |
 | REL-02 ★ | Daily backups + PITR; restore drill passed; RPO/RTO documented | OPS | P6-03 | [ ] |
 | REL-03 ★ | Zero-downtime deploy with automatic rollback verified | OPS | P0-06 | [ ] |
 | REL-04 ★ | Queues have retries, backoff, dead-letter handling, failure alerts | BE | P4-09 | [ ] |
@@ -58,7 +58,7 @@ These items are explicitly **out of MVP scope** and must not block M6. They are 
 | REL-06 ★ | Overbooking and quarantine workflows exercised | QA | P4-06 | [ ] |
 | REL-07 | Circuit breaker pauses and recovers on provider outage (game day) | BE | P4-09 | [ ] |
 | REL-08 | Migrations backward compatible with previous release (verified on staging) | BE | all | [ ] Not verifiable yet — no staging environment exists (P0-06). |
-| REL-09 | Hold-expiry job monitored; double-run safety verified | BE | P1-10 | [ ] |
+| REL-09 | Hold-expiry job monitored; double-run safety verified | BE | P1-10 | [x] P1-10 — `tests/Concurrency/DoubleExpiryTest.php`: 32 concurrent expiry runs expire the hold exactly once and return the units exactly once (monitoring/alerting itself stays with P6-04) |
 
 ## Observability (OBS)
 

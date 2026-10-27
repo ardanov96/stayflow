@@ -101,14 +101,14 @@ Rules:
 
 ## 8. Git and review workflow
 
-1. Trunk-based: short-lived branches `feat/<task-id>-<slug>`, `fix/<id>-<slug>`; rebase before merge; squash merge with a Conventional Commit title.
-2. One task per PR; PR size: aim for < 500 changed lines excluding generated files; split otherwise.
-3. PR description: task ID, summary, acceptance mapping, migrations, risks, screenshots for UI, how it was tested, vendor docs consulted (with date).
-4. Required checks: CI green; at least one human approval for changes to Inventory, Folio, Payments, Distribution, security, or migrations on large tables.
-5. No force-push to `main`; no direct commits to `main`.
+1. Trunk-based, single maintainer: work lands **directly on `main`** in small commits with Conventional Commit titles. No feature branches, no pull requests.
+2. One task per push; push size: aim for < 500 changed lines excluding generated files; split otherwise.
+3. The task notes in `docs/BACKLOG.md` carry what a PR description used to: task ID, summary, acceptance mapping, migrations, risks, screenshots for UI, how it was tested, vendor docs consulted (with date).
+4. Required checks: `composer ci` green **before** the push; the owner reviews the diff before pushing; CI runs on every push to `main` and must stay green. Changes to Inventory, Folio, Payments, Distribution, security, or migrations on large tables are reviewed with extra care.
+5. No force-push to `main`.
 6. Release: tagged releases from `main`; changelog from Conventional Commits; rollback procedure documented in runbooks.
 
-## 9. Definition of Done (copy into every PR)
+## 9. Definition of Done (copy into every push)
 
 - [ ] Task acceptance criteria each mapped to a test or documented manual check
 - [ ] `composer ci` green; frontend lint/test/build green
@@ -125,7 +125,7 @@ Rules:
 ## 10. Documentation and decisions
 
 1. Architecture decisions are recorded as ADRs in `docs/DECISIONS.md` (context, decision, consequences, status).
-2. Public behavior changes update the OpenAPI spec and user docs in the same PR.
+2. Public behavior changes update the OpenAPI spec and user docs in the same push.
 3. Runbooks live in `docs/runbooks/` (created in P6-05) and are tested in drills.
 4. Do not leave `TODO` without a task ID.
 

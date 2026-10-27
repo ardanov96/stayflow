@@ -27,24 +27,28 @@ If two documents conflict, stop and raise it (see §7). Never silently pick one.
 5. **No secrets in the repo, logs, or test fixtures.** Use `.env` and the secret store. Never commit real API keys, tokens, or guest data.
 6. **Webhooks and mutating public endpoints are idempotent** and verify signatures where the sender provides them.
 7. **Do not copy text, images, brand names, or UI from guirez.com or any competitor.** Original work only.
-8. **Do not weaken tests to make them pass.** If a test is wrong, fix it and say why in the PR.
+8. **Do not weaken tests to make them pass.** If a test is wrong, fix it and say why in the commit message.
 9. **Do not make human-owned decisions** (listed in `docs/DECISIONS.md` §2). Propose, then wait.
-10. **Do not invent vendor API details.** Read the vendor's current documentation (or ask a human to supply it). Record what you verified and the date in the PR.
+10. **Do not invent vendor API details.** Read the vendor's current documentation (or ask a human to supply it). Record what you verified and the date in the commit message.
 
 ## 4. Task loop
+
+The project has a single maintainer: the work happens **directly on
+`main`**, in small commits, pushed as they land. There are no feature
+branches and no pull requests — the review happens on the diff, before the
+push.
 
 For each task in `docs/BACKLOG.md`:
 
 1. **Pick** a task whose `deps` are all `done` and whose status is `todo`. Prefer lower phase numbers, then lower IDs.
 2. **Claim**: set its status to `in-progress` in `docs/BACKLOG.md` in your first commit.
-3. **Plan** in the PR description: files you will touch, migrations, risks. For tasks sized `L`, post the plan first and wait for approval when a human is available.
-4. **Branch**: `feat/<task-id>-<slug>` (for example `feat/P1-08-inventory-days`).
-5. **Implement** in small commits using Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`, `chore:`, `refactor:`).
-6. **Verify** locally: `composer ci` must pass (format check, static analysis, architecture tests, unit and feature tests). Frontend: `npm run lint && npm run test && npm run build`. When the task touches inventory concurrency, `composer concurrency` must pass too (it needs a real MySQL 8 server, see `docs/CONCURRENCY.md`).
-7. **Prove acceptance**: map each acceptance bullet in the task to a test or a documented manual check in the PR.
-8. **Finish**: tick the Definition of Done (`docs/ENGINEERING_STANDARDS.md` §9), set status `done` (or `blocked` with the reason), open the PR.
+3. **Plan** before writing code: the files you will touch, the migrations, the risks. Record it in the task notes of `docs/BACKLOG.md` and in the commit messages. For tasks sized `L`, state the plan first and wait for approval when a human is available.
+4. **Implement** on `main` in small commits using Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`, `chore:`, `refactor:`).
+5. **Verify** locally: `composer ci` must pass (format check, static analysis, architecture tests, unit and feature tests). Frontend: `npm run lint && npm run test && npm run build`. When the task touches inventory concurrency, `composer concurrency` must pass too (it needs a real MySQL 8 server, see `docs/CONCURRENCY.md`).
+6. **Prove acceptance**: map each acceptance bullet in the task to a test or a documented manual check, in the task notes.
+7. **Finish**: tick the Definition of Done (`docs/ENGINEERING_STANDARDS.md` §9), set status `done` (or `blocked` with the reason), and push.
 
-One task per PR. A PR that touches more than one module needs a stated reason.
+One task per push. A push that touches more than one module needs a stated reason.
 
 ## 5. Repository layout (target)
 
@@ -117,9 +121,9 @@ Format: `BLOCKED <task-id>: <one-sentence problem>. Options: A) … B) … Recom
 > You are an engineer on Stayflow. Read `AGENTS.md`, then execute task `<TASK-ID>` from `docs/BACKLOG.md`
 > following §4. Stop and ask per §7 if blocked.
 
-**Review a PR**
-> Review this PR against `docs/ENGINEERING_STANDARDS.md` §9 (Definition of Done) and the task's acceptance
-> criteria in `docs/BACKLOG.md`. List violations of the hard rules in `AGENTS.md` §3 first.
+**Review a change**
+> Review the commits of this task against `docs/ENGINEERING_STANDARDS.md` §9 (Definition of Done) and the
+> task's acceptance criteria in `docs/BACKLOG.md`. List violations of the hard rules in `AGENTS.md` §3 first.
 
 **Plan a phase**
 > Read `docs/ROADMAP.md` and `docs/BACKLOG.md`. For phase `<P#>`, propose a sprint plan that respects

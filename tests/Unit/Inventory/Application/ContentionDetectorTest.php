@@ -6,8 +6,6 @@ use App\Modules\Inventory\Application\Support\ContentionDetector;
 use Illuminate\Database\DeadlockException;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\UniqueConstraintViolationException;
-use PDOException;
-use RuntimeException;
 
 it('detects a deadlock exception', function (): void {
     expect(ContentionDetector::isDeadlock(new DeadlockException('Deadlock found')))->toBeTrue();

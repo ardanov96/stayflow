@@ -6,8 +6,6 @@ use App\Modules\Inventory\Domain\Exceptions\HoldStateException;
 use App\Modules\Inventory\Domain\Hold\Hold;
 use App\Modules\Inventory\Domain\Hold\HoldRequest;
 use App\Modules\Inventory\Domain\Hold\HoldStatus;
-use DateTimeImmutable;
-use InvalidArgumentException;
 
 function makeHold(
     HoldStatus $status = HoldStatus::Active,

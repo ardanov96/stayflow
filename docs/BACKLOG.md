@@ -351,7 +351,7 @@ Deps: P1-06, P1-07 · Size: L · Status: done · Gate: M1
   - **Verification**: `vendor/bin/pest` 413/413 passed (1920 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean, `npm run lint` clean.
 
 ### P1-09 Holds: hold, commit, release, expire
-Deps: P1-08 · Size: L · Status: todo · Gate: M1
+Deps: P1-08 · Size: L · Status: in-progress · Gate: M1
 - `hold()` with deterministic lock order, retry on deadlock, idempotency key; `commit`, `release`, `cancel`; expiry job; `InventoryChanged` event emitted after commit.
 - Acceptance: algorithm matches `docs/ARCHITECTURE.md` §5.3; repeating a call with the same key returns the same hold.
 

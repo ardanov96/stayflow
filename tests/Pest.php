@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Tests\Concurrency\ConcurrencyTestCase;
 use Tests\TestCase;
 
 /*
@@ -15,6 +16,19 @@ use Tests\TestCase;
 */
 
 pest()->extend(TestCase::class)->in('Feature', 'Unit');
+
+/*
+|--------------------------------------------------------------------------
+| Concurrency Test Case
+|--------------------------------------------------------------------------
+|
+| The concurrency suite (task P1-10) needs a real MySQL 8 server and its
+| own database, so it has its own base class. It is bound here so the
+| scenario files stay free of boilerplate.
+|
+*/
+
+pest()->extend(ConcurrencyTestCase::class)->in('Concurrency');
 
 /*
 |--------------------------------------------------------------------------

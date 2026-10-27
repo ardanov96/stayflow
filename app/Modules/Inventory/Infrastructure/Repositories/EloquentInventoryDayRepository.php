@@ -87,6 +87,80 @@ final class EloquentInventoryDayRepository implements InventoryDayRepository
             ->increment('blocked_units', $units);
     }
 
+    public function lockRangeForRoomTypes(array $roomTypeIds, string $startDate, string $endDate): array
+    {
+        if (empty($roomTypeIds)) {
+            return [];
+        }
+
+        /** @var Collection<int, InventoryDay> $models */
+        $models = InventoryDay::query()
+            ->whereIn('room_type_id', $roomTypeIds)
+            ->where('date', '>=', $startDate)
+            ->where('date', '<=', $endDate)
+            ->orderBy('room_type_id')
+            ->orderBy('date')
+            ->lockForUpdate()
+            ->get();
+
+        $result = [];
+        foreach ($roomTypeIds as $id) {
+            $result[$id] = [];
+        }
+
+        foreach ($models as $model) {
+            $rawDate = $model->getRawOriginal('date');
+            $dateString = is_string($rawDate)
+                ? substr($rawDate, 0, 10)
+                : substr((string) $model->getAttribute('date'), 0, 10);
+
+            $result[$model->room_type_id][$dateString] = $this->toDTO($model);
+        }
+
+        return $result;
+    }
+
+    public function incrementHeldUnits(int $roomTypeId, array $dates, int $units): void
+    {
+        if (empty($dates)) {
+            return;
+        }
+
+        InventoryDay::query()
+            ->where('room_type_id', $roomTypeId)
+            ->whereIn('date', $dates)
+            ->increment('held_units', $units);
+    }
+
+    public function decrementHeldUnits(int $roomTypeId, array $dates, int $units): void
+    {
+        if (empty($dates)) {
+            return;
+        }
+
+        InventoryDay::query()
+            ->where('room_type_id', $roomTypeId)
+            ->whereIn('date', $dates)
+            ->update([
+                'held_units' => DB::raw("CASE WHEN held_units >= {$units} THEN held_units - {$units} ELSE 0 END"),
+            ]);
+    }
+
+    public function convertHeldUnitsToSold(int $roomTypeId, array $dates, int $units): void
+    {
+        if (empty($dates)) {
+            return;
+        }
+
+        InventoryDay::query()
+            ->where('room_type_id', $roomTypeId)
+            ->whereIn('date', $dates)
+            ->update([
+                'held_units' => DB::raw("CASE WHEN held_units >= {$units} THEN held_units - {$units} ELSE 0 END"),
+                'sold_units' => DB::raw("sold_units + {$units}"),
+            ]);
+    }
+
     public function decrementBlockedUnits(int $roomTypeId, string $startDate, string $endDate, int $units): void
     {
         InventoryDay::query()

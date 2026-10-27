@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Inventory\Infrastructure\Jobs;
 
 use App\Modules\Inventory\Contracts\InventoryService;
+use App\Modules\Platform\Domain\Tenancy\TenantContext;
 use App\Modules\Platform\Jobs\Middleware\PropagatesTenantContext;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -27,6 +28,7 @@ final class MaterializeInventoryDaysJob implements ShouldQueue
         public readonly ?string $startDate = null,
         public readonly ?string $endDate = null,
         public readonly ?array $roomTypeIds = null,
+        public readonly ?int $organizationId = null,
     ) {}
 
     /**
@@ -34,6 +36,10 @@ final class MaterializeInventoryDaysJob implements ShouldQueue
      */
     public function middleware(): array
     {
+        if ($this->organizationId !== null) {
+            return [new PropagatesTenantContext(TenantContext::forOrganization($this->organizationId))];
+        }
+
         return [new PropagatesTenantContext];
     }
 

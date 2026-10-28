@@ -21,6 +21,7 @@ use App\Modules\Platform\Infrastructure\Console\Commands\DeployPublishCommand;
 use App\Modules\Platform\Infrastructure\Console\Commands\DeployRollbackCommand;
 use App\Modules\Platform\Infrastructure\Console\Commands\DeployStatusCommand;
 use App\Modules\Platform\Infrastructure\Console\Commands\DeployVerifyCommand;
+use App\Modules\Platform\Infrastructure\Console\Commands\GenerateErdCommand;
 use App\Modules\Platform\Infrastructure\Identity\Adapters\EloquentLoginAttemptRecorder;
 use App\Modules\Platform\Infrastructure\Identity\Adapters\EloquentUserIdentityGateway;
 use App\Modules\Platform\Infrastructure\Identity\Adapters\Google2faTotpGenerator;
@@ -94,6 +95,7 @@ final class PlatformServiceProvider extends ServiceProvider
             DeployVerifyCommand::class,
             DeployStatusCommand::class,
             DeployPruneCommand::class,
+            GenerateErdCommand::class,
         ]);
 
         // Wire Laravel Gate to RoleChecker for all known Permission cases

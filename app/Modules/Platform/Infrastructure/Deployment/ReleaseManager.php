@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Platform\Infrastructure\Deployment;
 
+use App\Support\Date\UtcTimestamp;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
@@ -79,7 +80,7 @@ final class ReleaseManager
             throw new RuntimeException("The deployment source {$source} does not exist.");
         }
 
-        $id ??= date('Ymd-His');
+        $id ??= UtcTimestamp::compact();
         $path = $this->uniqueReleasePath($id);
 
         mkdir($path, 0755, true);

@@ -8,6 +8,7 @@ use App\Modules\Catalog\Contracts\CatalogService;
 use App\Modules\Inventory\Application\Ports\HoldRepository;
 use App\Modules\Inventory\Application\Ports\InventoryDayRepository;
 use App\Modules\Inventory\Application\Support\ContentionDetector;
+use App\Modules\Inventory\Application\Support\ResolvesPropertyTimezone;
 use App\Modules\Inventory\Application\Support\RetriesOnContention;
 use App\Modules\Inventory\Contracts\DTOs\InventoryHoldDTO;
 use App\Modules\Inventory\Domain\Availability\InventoryWindow;
@@ -40,6 +41,7 @@ use Throwable;
  */
 final readonly class HoldInventoryAction
 {
+    use ResolvesPropertyTimezone;
     use RetriesOnContention;
 
     public function __construct(
@@ -57,7 +59,10 @@ final readonly class HoldInventoryAction
     ): InventoryHoldDTO {
         $this->assertValidIdempotencyKey($idempotencyKey);
         $this->assertRoomTypeBelongsToProperty($organizationId, $request);
-        $this->assertWithinMaterializedWindow($request);
+        $this->assertWithinMaterializedWindow(
+            $request,
+            $this->propertyTimezone($this->catalogService, $request->propertyId),
+        );
 
         try {
             return $this->withContentionRetry(
@@ -273,13 +278,13 @@ final readonly class HoldInventoryAction
         }
     }
 
-    private function assertWithinMaterializedWindow(HoldRequest $request): void
+    private function assertWithinMaterializedWindow(HoldRequest $request, string $timezone): void
     {
-        if (! InventoryWindow::isWithinWindow($request->checkIn)) {
+        if (! InventoryWindow::isWithinWindow($request->checkIn, $timezone)) {
             throw OutsideMaterializedWindowException::forDate($request->checkIn);
         }
 
-        if (! InventoryWindow::isWithinWindow($request->checkOut)) {
+        if (! InventoryWindow::isWithinWindow($request->checkOut, $timezone)) {
             throw OutsideMaterializedWindowException::forDate($request->checkOut);
         }
     }

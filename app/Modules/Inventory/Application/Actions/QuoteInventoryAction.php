@@ -7,6 +7,7 @@ namespace App\Modules\Inventory\Application\Actions;
 use App\Modules\Catalog\Contracts\CatalogService;
 use App\Modules\Inventory\Application\Ports\InventoryDayRepository;
 use App\Modules\Inventory\Application\Ports\RestrictionDayRepository;
+use App\Modules\Inventory\Application\Support\ResolvesPropertyTimezone;
 use App\Modules\Inventory\Contracts\DTOs\InventoryQuoteDTO;
 use App\Modules\Inventory\Contracts\DTOs\NightlyAvailabilityDTO;
 use App\Modules\Inventory\Contracts\DTOs\RoomTypeQuoteDTO;
@@ -14,13 +15,13 @@ use App\Modules\Inventory\Contracts\PricingService;
 use App\Modules\Inventory\Domain\Availability\InventoryWindow;
 use App\Modules\Inventory\Domain\Exceptions\InvalidDateRangeException;
 use App\Modules\Inventory\Domain\Exceptions\OutsideMaterializedWindowException;
-use DateInterval;
-use DatePeriod;
-use DateTimeImmutable;
+use App\Support\Date\StayDate;
 use Throwable;
 
 final readonly class QuoteInventoryAction
 {
+    use ResolvesPropertyTimezone;
+
     public function __construct(
         private CatalogService $catalogService,
         private InventoryDayRepository $inventoryDayRepository,
@@ -40,18 +41,20 @@ final readonly class QuoteInventoryAction
         int $children = 0,
         ?int $ratePlanId = null,
     ): InventoryQuoteDTO {
-        $checkIn = new DateTimeImmutable($checkInDate);
-        $checkOut = new DateTimeImmutable($checkOutDate);
+        $checkIn = StayDate::fromString($checkInDate);
+        $checkOut = StayDate::fromString($checkOutDate);
 
-        if ($checkIn >= $checkOut) {
+        if (! $checkOut->isAfter($checkIn)) {
             throw new InvalidDateRangeException("Check-out date ({$checkOutDate}) must be after check-in date ({$checkInDate}).");
         }
 
-        if (! InventoryWindow::isWithinWindow($checkInDate) || ! InventoryWindow::isWithinWindow($checkOutDate)) {
+        $timezone = $this->propertyTimezone($this->catalogService, $propertyId);
+
+        if (! InventoryWindow::isWithinWindow($checkInDate, $timezone) || ! InventoryWindow::isWithinWindow($checkOutDate, $timezone)) {
             throw OutsideMaterializedWindowException::forDate($checkOutDate);
         }
 
-        $nights = (int) $checkIn->diff($checkOut)->days;
+        $nights = $checkIn->nightsUntil($checkOut);
 
         // Fetch room types
         $allRoomTypes = $this->catalogService->getRoomTypesForProperty($propertyId);
@@ -65,14 +68,13 @@ final readonly class QuoteInventoryAction
         $targetIds = array_map(fn ($rt) => $rt->id, $targetRoomTypes);
 
         // Stay dates are [checkIn, checkOut - 1 day]
-        $lastNight = $checkOut->modify('-1 day');
-        $stayPeriod = new DatePeriod($checkIn, new DateInterval('P1D'), $checkOut);
+        $lastNight = $checkOut->minusDays(1);
 
         // Fetch inventory days for all target room types
         $daysByRoomType = $this->inventoryDayRepository->getRangeForRoomTypes(
             $targetIds,
             $checkInDate,
-            $lastNight->format('Y-m-d')
+            $lastNight->toString()
         );
 
         // Fetch restrictions if rate plan is specified (including check-out date for CTD)
@@ -106,8 +108,8 @@ final readonly class QuoteInventoryAction
                 $violations[] = "Closed to Departure (CTD) on {$checkOutDate}.";
             }
 
-            foreach ($stayPeriod as $night) {
-                $dateKey = $night->format('Y-m-d');
+            foreach ($checkIn->range($checkOut) as $night) {
+                $dateKey = $night->toString();
                 $inventoryDay = $roomDays[$dateKey] ?? null;
                 $restriction = $roomRestrictions[$dateKey] ?? null;
 

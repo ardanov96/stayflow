@@ -15,10 +15,8 @@ use App\Modules\Inventory\Domain\Pricing\NightlyPriceBreakdown;
 use App\Modules\Inventory\Domain\Pricing\StayPriceQuote;
 use App\Modules\Inventory\Domain\RatePlan\DerivationType;
 use App\Modules\Inventory\Domain\RatePlan\RateDerivation;
+use App\Support\Date\StayDate;
 use App\Support\Money\Money;
-use DateInterval;
-use DatePeriod;
-use DateTimeImmutable;
 use InvalidArgumentException;
 
 final readonly class CalculateStayPriceAction
@@ -38,10 +36,10 @@ final readonly class CalculateStayPriceAction
         int $adults,
         int $children = 0,
     ): StayPriceQuote {
-        $checkIn = new DateTimeImmutable($checkInDate);
-        $checkOut = new DateTimeImmutable($checkOutDate);
+        $checkIn = StayDate::fromString($checkInDate);
+        $checkOut = StayDate::fromString($checkOutDate);
 
-        if ($checkOut <= $checkIn) {
+        if (! $checkOut->isAfter($checkIn)) {
             throw InvalidDateRangeException::checkOutBeforeCheckIn($checkInDate, $checkOutDate);
         }
 
@@ -55,16 +53,10 @@ final readonly class CalculateStayPriceAction
             throw new InvalidArgumentException("Rate plan {$ratePlanId} does not belong to property {$propertyId}.");
         }
 
-        // Generate list of night dates: [checkIn, checkOut)
-        $nightPeriod = new DatePeriod(
-            $checkIn,
-            new DateInterval('P1D'),
-            $checkOut
-        );
-
+        // The list of night dates: [checkIn, checkOut)
         $nightDates = [];
-        foreach ($nightPeriod as $date) {
-            $nightDates[] = $date->format('Y-m-d');
+        foreach ($checkIn->range($checkOut) as $date) {
+            $nightDates[] = $date->toString();
         }
 
         // Fetch prices for these nights

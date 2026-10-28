@@ -12,9 +12,7 @@ use App\Modules\Inventory\Domain\Exceptions\OutsideMaterializedWindowException;
 use App\Modules\Platform\Application\AuditLog\Ports\Auditor;
 use App\Modules\Platform\Application\AuditLog\SubjectChange;
 use App\Modules\Platform\Application\AuditLog\TenantHint;
-use DateInterval;
-use DatePeriod;
-use DateTimeImmutable;
+use App\Support\Date\StayDate;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -40,10 +38,10 @@ final readonly class BlockInventoryAction
             throw new InvalidArgumentException("Units to block must be greater than 0, got {$units}.");
         }
 
-        $start = new DateTimeImmutable($startDate);
-        $end = new DateTimeImmutable($endDate);
+        $start = StayDate::fromString($startDate);
+        $end = StayDate::fromString($endDate);
 
-        if ($start > $end) {
+        if ($start->isAfter($end)) {
             throw new InvalidArgumentException("Start date {$startDate} cannot be after end date {$endDate}.");
         }
 
@@ -61,9 +59,8 @@ final readonly class BlockInventoryAction
         ): InventoryBlockDTO {
             $days = $this->inventoryDayRepository->getRange($roomTypeId, $startDate, $endDate);
 
-            $period = new DatePeriod($start, new DateInterval('P1D'), $end->modify('+1 day'));
-            foreach ($period as $dt) {
-                $dateKey = $dt->format('Y-m-d');
+            foreach ($start->range($end->plusDays(1)) as $date) {
+                $dateKey = $date->toString();
                 if (! isset($days[$dateKey])) {
                     throw OutsideMaterializedWindowException::unmaterialized($roomTypeId, $dateKey);
                 }

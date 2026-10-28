@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Inventory\Domain\Hold;
 
-use DateInterval;
-use DatePeriod;
+use App\Support\Date\StayDate;
 use DateTimeImmutable;
 use InvalidArgumentException;
 
@@ -14,6 +13,9 @@ use InvalidArgumentException;
  *
  * Pure value object: no persistence, no framework. The constructor
  * rejects malformed input so every action can rely on the invariants.
+ *
+ * The stay dates are `DATE` values: they are the nights of the hotel,
+ * not instants (see `App\Support\Date\StayDate`).
  */
 final readonly class HoldRequest
 {
@@ -47,12 +49,25 @@ final readonly class HoldRequest
             throw new InvalidArgumentException("Hold TTL must be greater than 0 seconds, got {$ttlSeconds}.");
         }
 
-        $checkInDate = new DateTimeImmutable($checkIn);
-        $checkOutDate = new DateTimeImmutable($checkOut);
-
-        if ($checkInDate >= $checkOutDate) {
-            throw new InvalidArgumentException("Check-out date ({$checkOut}) must be after check-in date ({$checkIn}).");
+        if (! $this->checkOutDate()->isAfter($this->checkInDate())) {
+            throw new InvalidArgumentException("Check-out date ({$this->checkOut}) must be after check-in date ({$this->checkIn}).");
         }
+    }
+
+    /**
+     * The check-in, as a stay date.
+     */
+    public function checkInDate(): StayDate
+    {
+        return StayDate::fromString($this->checkIn);
+    }
+
+    /**
+     * The check-out, as a stay date.
+     */
+    public function checkOutDate(): StayDate
+    {
+        return StayDate::fromString($this->checkOut);
     }
 
     /**
@@ -60,10 +75,7 @@ final readonly class HoldRequest
      */
     public function nights(): int
     {
-        $checkIn = new DateTimeImmutable($this->checkIn);
-        $checkOut = new DateTimeImmutable($this->checkOut);
-
-        return (int) $checkIn->diff($checkOut)->days;
+        return $this->checkInDate()->nightsUntil($this->checkOutDate());
     }
 
     /**
@@ -73,13 +85,10 @@ final readonly class HoldRequest
      */
     public function stayDates(): array
     {
-        $checkIn = new DateTimeImmutable($this->checkIn);
-        $checkOut = new DateTimeImmutable($this->checkOut);
-
         $dates = [];
-        $period = new DatePeriod($checkIn, new DateInterval('P1D'), $checkOut);
-        foreach ($period as $date) {
-            $dates[] = $date->format('Y-m-d');
+
+        foreach ($this->checkInDate()->range($this->checkOutDate()) as $date) {
+            $dates[] = $date->toString();
         }
 
         return $dates;

@@ -9,9 +9,7 @@ use App\Modules\Inventory\Application\Ports\RatePriceRepository;
 use App\Modules\Platform\Application\AuditLog\Ports\Auditor;
 use App\Modules\Platform\Application\AuditLog\SubjectChange;
 use App\Modules\Platform\Application\AuditLog\TenantHint;
-use DateInterval;
-use DatePeriod;
-use DateTimeImmutable;
+use App\Support\Date\StayDate;
 use InvalidArgumentException;
 
 final readonly class SetRatePricesAction
@@ -46,28 +44,23 @@ final readonly class SetRatePricesAction
             throw new InvalidArgumentException("Rate plan {$payload['rate_plan_id']} does not belong to property {$propertyId}.");
         }
 
-        $startDate = new DateTimeImmutable($payload['start_date']);
-        $endDate = new DateTimeImmutable($payload['end_date']);
+        $startDate = StayDate::fromString($payload['start_date']);
+        $endDate = StayDate::fromString($payload['end_date']);
 
-        if ($endDate < $startDate) {
+        if ($endDate->isBefore($startDate)) {
             throw new InvalidArgumentException("End date ({$payload['end_date']}) cannot precede start date ({$payload['start_date']}).");
         }
-
-        // DatePeriod is inclusive start, inclusive end when interval added
-        $period = new DatePeriod(
-            $startDate,
-            new DateInterval('P1D'),
-            $endDate->modify('+1 day')
-        );
 
         $prices = [];
         $currency = $payload['currency'] ?? 'IDR';
         $extraAdult = $payload['extra_adult_price_minor'] ?? 0;
         $extraChild = $payload['extra_child_price_minor'] ?? 0;
 
-        foreach ($period as $date) {
+        // The range is inclusive on both ends: a price covers the night
+        // of the start date and the night of the end date.
+        foreach ($startDate->range($endDate->plusDays(1)) as $date) {
             $prices[] = [
-                'date' => $date->format('Y-m-d'),
+                'date' => $date->toString(),
                 'base_price_minor' => $payload['base_price_minor'],
                 'currency' => $currency,
                 'extra_adult_price_minor' => $extraAdult,

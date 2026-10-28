@@ -477,9 +477,18 @@ Deps: P1-12 · Size: M · Status: todo
 - Acceptance: template rendering tests per locale; failed delivery recorded and visible.
 
 ### P1-16 Tenant-aware error reporting context
-Deps: P0-07, P1-01 · Size: S · Status: todo
+Deps: P0-07, P1-01 · Size: S · Status: done
 - Publish `config/sentry.php` and attach tenant context (`organization_id`, `property_id`) to Sentry events raised in HTTP requests **and** queued jobs, via a `before_send` hook or a context callback. Today the package is auto-discovered but no context is attached, so error reports cannot be attributed to a tenant — the gap was deferred from P0-07 to P1-01, was not delivered there, and is tracked in `docs/PRODUCTION_READINESS.md` (OBS-01).
 - Acceptance: a test raises an exception inside a tenant-scoped request and inside a tenant-scoped job and asserts the captured event carries `organization_id` and `property_id`; no guest PII (name, email, document number) is attached.
+  - **Closeout**:
+    - **Deliverables**:
+      - **`config/sentry.php` is published** and the application hands every reported exception to Sentry (`bootstrap/app.php`, `withExceptions`). The package does **not** capture the exceptions on its own since v4 — the application has to call `Integration::captureUnhandledException()`; without that, an error report was never sent.
+      - **The tenant is attached by a `before_send` hook** (`app/Modules/Platform/Infrastructure/ErrorReporting/SentryTenantContext.php`). It reads the tenant that is active **when the event is sent**, so it works the same for a request and for a queued job (the job middleware propagates the tenant), and a system job without a tenant attaches nothing — it never inherits the tenant of a previous job.
+      - **The identity of the user is taken out of the event**: only the identifier of the user is kept. The Laravel integration of Sentry attaches the email and the name of the logged-in user to the scope, and the identifier of the user is enough to find the data again.
+    - **Acceptance proof**:
+      - **A tenant-scoped request and a tenant-scoped job**: Covered by `tests/Feature/Platform/TenantErrorContextTest.php` — the event captured from a request and from a job carries `organization_id` and `property_id`, an event raised outside a tenant carries no tenant, and the payload carries neither the name nor the email of the guest.
+      - **The hook itself**: Covered by `tests/Unit/Platform/SentryTenantContextTest.php` (the identity is removed from an event that carries it; an event without a user is left alone).
+    - **Verification**: `vendor/bin/pest --testsuite=Unit,Feature,Arch` 504/504 passed (2236 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean.
 
 ---
 

@@ -64,7 +64,7 @@ These items are explicitly **out of MVP scope** and must not block M6. They are 
 
 | ID | Requirement | Owner | Task | Done |
 |---|---|---|---|---|
-| OBS-01 ★ | Sentry captures app and worker errors with tenant context | OPS | P1-16 | [ ] Not implemented: the package is auto-discovered but no `config/sentry.php` is published and no tenant context is attached, so events cannot be attributed to a tenant. Deferred from P0-07 to P1-01, not delivered there — now tracked as **P1-16**. |
+| OBS-01 ★ | Sentry captures app and worker errors with tenant context | OPS | P1-16 | [x] P1-16 — `config/sentry.php` is published, every reported exception is handed to Sentry, and the `before_send` hook attaches the `organization_id` and the `property_id` of the tenant that is active when the event is sent (a request and a queued job alike). The hook also takes the identity of the user out of the event. |
 | OBS-02 ★ | Structured logs with request IDs; PII redaction verified | OPS | P0-07 | [x] P0-07 — `RequestIdProcessor` and `PiiScrubberProcessor` |
 | OBS-03 ★ | Alerts: sync failing, drift, quarantine, payment webhook failures, queue depth, hold expiry stalled | OPS | P6-04 | [ ] |
 | OBS-04 ★ | Uptime checks: app, public API, widget loader, webhook endpoints | OPS | P6-04 | [ ] |

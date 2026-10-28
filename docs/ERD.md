@@ -239,6 +239,61 @@ erDiagram
         datetime created_at
         datetime updated_at
     }
+    reservation_events {
+        int id PK
+        ref organization_id FK
+        ref reservation_id FK
+        string type
+        text payload
+        ref actor_id FK
+        datetime at
+        datetime created_at
+        datetime updated_at
+    }
+    reservation_guests {
+        int id PK
+        ref organization_id FK
+        ref reservation_id FK
+        ref guest_id UK
+        string role
+        datetime created_at
+        datetime updated_at
+    }
+    reservation_rooms {
+        int id PK
+        ref organization_id FK
+        ref reservation_id FK
+        ref property_id FK
+        ref room_type_id FK
+        ref rate_plan_id FK
+        ref room_unit_id FK
+        text nights
+        int total_minor
+        string currency
+        datetime created_at
+        datetime updated_at
+    }
+    reservations {
+        int id PK
+        ref organization_id FK
+        ref property_id FK
+        string code UK
+        string status
+        string source
+        string channel_ref
+        ref guest_id
+        date arrival
+        date departure
+        int adults
+        int children
+        int total_minor
+        string currency
+        int version
+        ref hold_id FK
+        int created_by FK
+        datetime created_at
+        datetime updated_at
+    }
     restrictions_days {
         int id PK
         ref organization_id FK
@@ -405,6 +460,21 @@ erDiagram
     rate_plans ||--o{ rate_prices : "rate_plan_id"
     properties ||--o{ rate_prices : "property_id"
     organizations ||--o{ rate_prices : "organization_id"
+    users ||--o{ reservation_events : "actor_id"
+    reservations ||--o{ reservation_events : "reservation_id"
+    organizations ||--o{ reservation_events : "organization_id"
+    reservations ||--o{ reservation_guests : "reservation_id"
+    organizations ||--o{ reservation_guests : "organization_id"
+    room_units ||--o{ reservation_rooms : "room_unit_id"
+    rate_plans ||--o{ reservation_rooms : "rate_plan_id"
+    room_types ||--o{ reservation_rooms : "room_type_id"
+    properties ||--o{ reservation_rooms : "property_id"
+    reservations ||--o{ reservation_rooms : "reservation_id"
+    organizations ||--o{ reservation_rooms : "organization_id"
+    users ||--o{ reservations : "created_by"
+    inventory_holds ||--o{ reservations : "hold_id"
+    properties ||--o{ reservations : "property_id"
+    organizations ||--o{ reservations : "organization_id"
     room_types ||--o{ restrictions_days : "room_type_id"
     rate_plans ||--o{ restrictions_days : "rate_plan_id"
     properties ||--o{ restrictions_days : "property_id"
@@ -447,6 +517,10 @@ erDiagram
 | `property_policies` | catalog |
 | `rate_plans` | inventory |
 | `rate_prices` | inventory |
+| `reservation_events` | reservations |
+| `reservation_guests` | reservations |
+| `reservation_rooms` | reservations |
+| `reservations` | reservations |
 | `restrictions_days` | inventory |
 | `room_type_amenities` | *(no model)* |
 | `room_types` | catalog |

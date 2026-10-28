@@ -39,6 +39,19 @@ final class Reservation
     private ?int $id = null;
 
     /**
+     * The version the row had when the reservation was read.
+     *
+     * It is what the write is guarded with: a caller that read the
+     * reservation before a change does not write over it.
+     */
+    private int $expectedVersion = 0;
+
+    /**
+     * The inventory hold this reservation came from.
+     */
+    private ?int $holdId = null;
+
+    /**
      * @param  list<ReservationRoom>  $rooms
      */
     public function __construct(
@@ -165,6 +178,7 @@ final class Reservation
         ReservationStatus $status,
         array $rooms = [],
         int $version = 1,
+        ?int $holdId = null,
     ): self {
         $reservation = new self(
             organizationId: $organizationId,
@@ -185,6 +199,8 @@ final class Reservation
         );
 
         $reservation->id = $id;
+        $reservation->expectedVersion = $version;
+        $reservation->holdId = $holdId;
 
         return $reservation;
     }
@@ -231,6 +247,30 @@ final class Reservation
     public function version(): int
     {
         return $this->version;
+    }
+
+    /**
+     * The version the row had when the reservation was read.
+     */
+    public function expectedVersion(): int
+    {
+        return $this->expectedVersion;
+    }
+
+    /**
+     * The inventory hold this reservation came from.
+     */
+    public function holdId(): ?int
+    {
+        return $this->holdId;
+    }
+
+    /**
+     * Link the reservation to the inventory hold it came from.
+     */
+    public function attachHold(int $holdId): void
+    {
+        $this->holdId = $holdId;
     }
 
     /**
@@ -327,6 +367,30 @@ final class Reservation
     }
 
     /**
+     * Move the reservation to another state, when the machine allows it.
+     */
+    public function transitionTo(ReservationStatus $to, ?string $reason = null, string $action = 'moved'): void
+    {
+        if (! $this->status->canTransitionTo($to)) {
+            throw InvalidReservationTransition::from($this->status, $to, $action);
+        }
+
+        $from = $this->status;
+        $this->status = $to;
+        $this->version++;
+
+        $this->record(new ReservationStatusChanged(
+            organizationId: $this->organizationId,
+            propertyId: $this->propertyId,
+            reservationId: $this->id ?? 0,
+            from: $from,
+            to: $to,
+            reason: $reason,
+            version: $this->version,
+        ));
+    }
+
+    /**
      * A modification of the reservation: the dates, the guests, the
      * number of people.
      *
@@ -394,30 +458,6 @@ final class Reservation
             roomTypeId: $roomTypeId,
             roomUnitId: $roomUnitId,
             nights: [],
-        ));
-    }
-
-    /**
-     * Move the reservation to another state, when the machine allows it.
-     */
-    public function transitionTo(ReservationStatus $to, ?string $reason = null, string $action = 'moved'): void
-    {
-        if (! $this->status->canTransitionTo($to)) {
-            throw InvalidReservationTransition::from($this->status, $to, $action);
-        }
-
-        $from = $this->status;
-        $this->status = $to;
-        $this->version++;
-
-        $this->record(new ReservationStatusChanged(
-            organizationId: $this->organizationId,
-            propertyId: $this->propertyId,
-            reservationId: $this->id ?? 0,
-            from: $from,
-            to: $to,
-            reason: $reason,
-            version: $this->version,
         ));
     }
 

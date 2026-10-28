@@ -27,7 +27,7 @@ These items are explicitly **out of MVP scope** and must not block M6. They are 
 | SEC-04 ★ | Tenant isolation suite green for every tenant table | BE | P1-01 | [x] P1-01 — `tests/Feature/Platform/Tenancy/TenantTableArchTest.php` plus the isolation suite |
 | SEC-05 ★ | Sensitive guest fields encrypted at rest; keys outside repo | BE | P2-07 | [ ] |
 | SEC-06 ★ | Secrets in host secret store; rotation procedure documented | OPS | P6-05 | [ ] |
-| SEC-07 ★ | WAF, HSTS, CSP, secure cookies enabled | OPS | P0-06 | [ ] |
+| SEC-07 ★ | WAF, HSTS, CSP, secure cookies enabled | OPS | P0-06 | [ ] Not yet: the WAF and the edge policy come with Cloudflare, which needs the server to be provisioned first (`docs/STAGING.md` §5) |
 | SEC-08 | Rate limiting on auth, public API, webhooks verified by tests | BE | P3-01, P3-11 | [ ] |
 | SEC-09 ★ | Dependency audit and secret scan clean in CI | OPS | P0-01 | [x] P0-01 — `composer audit` and gitleaks run in `.github/workflows/ci.yml` |
 | SEC-10 ★ | Webhook signature verification and replay protection tested | BE | P3-04, P4-05 | [ ] |
@@ -52,7 +52,7 @@ These items are explicitly **out of MVP scope** and must not block M6. They are 
 |---|---|---|---|---|
 | REL-01 ★ | Inventory concurrency suite green (no oversell) | BE | P1-10 | [x] P1-10 — `composer concurrency` against MySQL 8: 500 concurrent holds for the last unit produce exactly 1 success; 4 green runs. See `docs/CONCURRENCY.md` |
 | REL-02 ★ | Daily backups + PITR; restore drill passed; RPO/RTO documented | OPS | P6-03 | [ ] |
-| REL-03 ★ | Zero-downtime deploy with automatic rollback verified | OPS | P0-06 | [ ] |
+| REL-03 ★ | Zero-downtime deploy with automatic rollback verified | OPS | P0-06 | [x] P0-06 — the release is prepared before the pointer moves (atomic swap, the old release keeps serving) and `deploy:publish` rolls back automatically when the health probe fails; proven by the drill in `tests/Feature/Platform/DeploymentTest.php`. The server itself is still to be provisioned (`docs/STAGING.md` §5) |
 | REL-04 ★ | Queues have retries, backoff, dead-letter handling, failure alerts | BE | P4-09 | [ ] |
 | REL-05 ★ | Channel reconciliation shows no unexplained drift for 2 weeks | BE | P4-10 | [ ] |
 | REL-06 ★ | Overbooking and quarantine workflows exercised | QA | P4-06 | [ ] |

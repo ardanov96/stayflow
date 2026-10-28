@@ -44,9 +44,23 @@ Deps: P0-01 · Size: M · Status: done
 - Closed on `chore/p0-05-closeout`: 79/79 Pest, Pint clean, PHPStan 0 errors, ESLint 0 warnings, Playwright green in `en`/`id`/`zh`, missing-key i18n parity check wired into `npm run lint`.
 
 ### P0-06 Staging environment and deployment pipeline
-Deps: P0-01 · Size: M · Status: todo
+Deps: P0-01 · Size: M · Status: in-progress
 - Server provisioned via Forge/Ploi; Cloudflare in front; zero-downtime deploy with health check and automatic rollback; secrets managed outside the repo.
 - Acceptance: merge to main deploys to staging; a deliberately failing health check rolls back automatically.
+  - **Partial (2026-10-27):** everything an agent can deliver is delivered and proven; the server itself is not provisioned yet, so the task stays `in-progress`.
+    - **Deliverables**:
+      - **Health endpoint**: `GET /healthz` (`app/Modules/Platform/Http/Controllers/HealthCheckController.php`), registered without any middleware in `app/Modules/Platform/Http/routes.php` so the probe works even when the session, the tenant context or the authentication layer are what is broken. It answers `200` with `{"status":"ok"}` or `503` with `{"status":"degraded"}`, names the failing component and never the reason. The checks are the ones a deployment can act on: `database`, `migrations` (nothing pending), `cache`, `storage`, `queue` (`app/Modules/Platform/Infrastructure/Health/HealthChecker.php`).
+      - **Deployment pipeline** (`app/Modules/Platform/Infrastructure/Deployment/`): `ReleaseManager` (prepares a release: copies the build without the secrets, the tests or the dependencies, runs the migrations, warms the caches, copies the shared secrets in), `ReleasePointer` (the atomic swap of the release that serves), `HealthProbe` (the HTTP probe), `DeployPublisher` (publish, probe, and roll back when the probe fails).
+      - **Commands** (`app/Modules/Platform/Infrastructure/Console/Commands/`): `deploy:publish`, `deploy:rollback`, `deploy:verify`, `deploy:status`, `deploy:prune`.
+      - **Workflow**: `.github/workflows/deploy.yml` — a push to `main` builds, uploads over SSH and publishes. The job only runs when the repository variable `STAGING_HOST` is set, so it never fails for a server that does not exist yet.
+      - **Configuration**: `config/deploy.php` (`DEPLOY_ROOT`, `DEPLOY_HEALTH_URL`, `DEPLOY_HEALTH_TIMEOUT`, `DEPLOY_HEALTH_INTERVAL`, `DEPLOY_COMPOSER`).
+      - **Documentation**: `docs/STAGING.md` — the pipeline, the server layout, the commands, and the provisioning steps.
+    - **Acceptance proof**:
+      - **A deliberately failing health check rolls back automatically**: Covered by `tests/Feature/Platform/DeploymentTest.php` — the drill publishes a release whose health is `degraded` and asserts that the server goes back to the release that worked, that the health endpoint keeps answering `200`, and that the failed release is kept on disk for forensics. The drill runs a real HTTP server and drives the real `deploy:publish` command.
+      - **The release machinery**: Covered by the same file (the release is prepared before the pointer moves, the secrets and the tests never enter a release, the rollback on demand works).
+      - **The health endpoint**: Covered by `tests/Feature/Platform/HealthCheckTest.php` (it answers without authentication or a tenant context, it reports every component, it answers `503` when a component is broken, and it never leaks the reason).
+    - **What remains (human)**: provisioning the server through Forge/Ploi, putting Cloudflare in front of it, and configuring the repository variables and secrets. This needs the hosting-region decision and the spending approval (`docs/DECISIONS.md` §2 items 6 and 7). The steps are written down in `docs/STAGING.md` §5.
+    - **Verification**: `vendor/bin/pest tests/Feature/Platform` 10/10 passed, `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean.
 
 ### P0-07 Error tracking and structured logging
 Deps: P0-01 · Size: S · Status: done (closeout `0446430`, 7 commits on `feat/p0-07-sentry-logging`)

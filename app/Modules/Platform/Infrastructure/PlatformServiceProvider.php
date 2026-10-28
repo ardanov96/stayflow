@@ -6,6 +6,7 @@ namespace App\Modules\Platform\Infrastructure;
 
 use App\Models\User;
 use App\Modules\Platform\Application\AuditLog\Ports\Auditor;
+use App\Modules\Platform\Application\Billing\ProcessBillingEvent;
 use App\Modules\Platform\Application\Identity\Ports\AuthMailer;
 use App\Modules\Platform\Application\Identity\Ports\LoginAttemptRecorder;
 use App\Modules\Platform\Application\Identity\Ports\RoleChecker;
@@ -17,8 +18,12 @@ use App\Modules\Platform\Cache\TenantCache;
 use App\Modules\Platform\Contracts\MediaStorage;
 use App\Modules\Platform\Contracts\NotificationDeliveryLog;
 use App\Modules\Platform\Contracts\OrganizationContext;
+use App\Modules\Platform\Contracts\SubscriptionRepository;
 use App\Modules\Platform\Domain\Identity\Permission;
 use App\Modules\Platform\Infrastructure\AuditLog\EloquentAuditor;
+use App\Modules\Platform\Infrastructure\Billing\BillingGatewaySelector;
+use App\Modules\Platform\Infrastructure\Billing\MidtransBillingGateway;
+use App\Modules\Platform\Infrastructure\Billing\XenditBillingGateway;
 use App\Modules\Platform\Infrastructure\Console\Commands\DeployPruneCommand;
 use App\Modules\Platform\Infrastructure\Console\Commands\DeployPublishCommand;
 use App\Modules\Platform\Infrastructure\Console\Commands\DeployRollbackCommand;
@@ -33,6 +38,7 @@ use App\Modules\Platform\Infrastructure\Identity\EloquentRoleChecker;
 use App\Modules\Platform\Infrastructure\Media\FilesystemMediaStorage;
 use App\Modules\Platform\Infrastructure\Notifications\EloquentNotificationDeliveryLog;
 use App\Modules\Platform\Infrastructure\Notifications\MailNotificationChannel;
+use App\Modules\Platform\Infrastructure\Subscriptions\EloquentSubscriptionRepository;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -94,6 +100,21 @@ final class PlatformServiceProvider extends ServiceProvider
             publicDisk: (string) config('media.public_disk'),
             publicUrl: (string) config('media.public_url'),
             privateDiskTemporaryUrls: (bool) config('media.private_disk_temporary_urls'),
+        ));
+
+        // P1-11 (SaaS subscription and plan gating): the local
+        // subscription is the single source of truth (ADR-0013), and the
+        // organization chooses its gateway.
+        $this->app->singleton(SubscriptionRepository::class, EloquentSubscriptionRepository::class);
+
+        $this->app->singleton(BillingGatewaySelector::class, fn (): BillingGatewaySelector => new BillingGatewaySelector([
+            'xendit' => new XenditBillingGateway,
+            'midtrans' => new MidtransBillingGateway,
+        ]));
+
+        $this->app->singleton(ProcessBillingEvent::class, fn ($app): ProcessBillingEvent => new ProcessBillingEvent(
+            subscriptions: $app->make(SubscriptionRepository::class),
+            gateways: $app->make(BillingGatewaySelector::class),
         ));
 
         $this->app->singleton(NotificationDispatcher::class, function ($app): NotificationDispatcher {

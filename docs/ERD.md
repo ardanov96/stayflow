@@ -38,6 +38,15 @@ erDiagram
         text metadata
         datetime created_at
     }
+    billing_events {
+        int id PK
+        ref organization_id FK
+        string gateway UK
+        string reference UK
+        string type
+        datetime created_at
+        datetime updated_at
+    }
     catalog_media {
         int id PK
         ref organization_id FK
@@ -288,6 +297,33 @@ erDiagram
         text payload
         int last_activity
     }
+    subscription_invoices {
+        int id PK
+        ref organization_id FK
+        ref subscription_id FK
+        int amount_minor
+        string currency
+        string status
+        string period_reference UK
+        datetime period_ends_at
+        datetime paid_at
+        string failure_reason
+        datetime created_at
+        datetime updated_at
+    }
+    subscriptions {
+        int id PK
+        ref organization_id FK
+        string plan
+        string status
+        datetime trial_ends_at
+        datetime current_period_ends_at
+        string gateway
+        string gateway_reference
+        datetime canceled_at
+        datetime created_at
+        datetime updated_at
+    }
     tax_rules {
         int id PK
         ref organization_id FK
@@ -324,6 +360,7 @@ erDiagram
     users ||--o{ audit_logs : "actor_id"
     properties ||--o{ audit_logs : "property_id"
     organizations ||--o{ audit_logs : "organization_id"
+    organizations ||--o{ billing_events : "organization_id"
     properties ||--o{ catalog_media : "property_id"
     organizations ||--o{ catalog_media : "organization_id"
     users ||--o{ inventory_blocks : "created_by"
@@ -369,6 +406,9 @@ erDiagram
     room_types ||--o{ room_units : "room_type_id"
     properties ||--o{ room_units : "property_id"
     organizations ||--o{ room_units : "organization_id"
+    subscriptions ||--o{ subscription_invoices : "subscription_id"
+    organizations ||--o{ subscription_invoices : "organization_id"
+    organizations ||--o{ subscriptions : "organization_id"
     properties ||--o{ tax_rules : "property_id"
     organizations ||--o{ tax_rules : "organization_id"
 ```
@@ -378,6 +418,7 @@ erDiagram
 |---|---|
 | `amenities` | catalog |
 | `audit_logs` | platform |
+| `billing_events` | *(no model)* |
 | `catalog_media` | catalog |
 | `inventory_blocks` | inventory |
 | `inventory_days` | inventory |
@@ -398,10 +439,12 @@ erDiagram
 | `room_types` | catalog |
 | `room_units` | catalog |
 | `sessions` | *(no model)* |
+| `subscription_invoices` | *(no model)* |
+| `subscriptions` | *(no model)* |
 | `tax_rules` | catalog |
 | `users` | *(no model)* |
 
-The tables marked *(no model)* have no Eloquent model yet: `notification_deliveries`, `password_reset_tokens`, `property_amenities`, `room_type_amenities`, `sessions`, `users`.
+The tables marked *(no model)* have no Eloquent model yet: `billing_events`, `notification_deliveries`, `password_reset_tokens`, `property_amenities`, `room_type_amenities`, `sessions`, `subscription_invoices`, `subscriptions`, `users`.
 <!-- END GENERATED -->
 
 ## Notes

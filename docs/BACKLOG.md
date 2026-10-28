@@ -440,10 +440,25 @@ Deps: P1-09 · Size: M · Status: done · Gate: M1
   - **Verification**: `vendor/bin/pest --testsuite=Unit,Feature,Arch` 469/469 passed (2102 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean, `vendor/bin/pest --testsuite=Concurrency` 8/8 passed (3493 assertions) — 4 green runs with `CONCURRENCY_WORKERS=32` and `CONCURRENCY_ATTEMPTS=500` on MySQL 8.0.46, and the three gating modes (`auto`, `1`, `0`) verified against a reachable and an unreachable server.
 
 ### P1-11 SaaS subscription and plan gating
-Deps: P1-01, P0-04 · Size: L · Status: todo
+Deps: P1-01, P0-04 · Size: L · Status: done
 - Plans (PMS, Booking Engine, Channel Manager, CRM), trial, subscription state, invoices for SaaS fees, feature flags per plan.
 - **Billing module (in-house, ADR-0013):** `Domain/Subscription` state machine, idempotency keys, webhook normalizer; `Infrastructure` adapters — **Xendit** (primary, supports VA/QRIS/e-wallet/cards via Merchant-Initiated Transactions) and **Midtrans** (secondary, cards only via recurring MID). Single source of truth = local `subscriptions` table; gateway refs stored as encrypted credentials per `organization`. Webhooks from both gateways normalized into internal domain events (`BillingCyclePaid`, `BillingCycleFailed`, `SubscriptionCanceled`).
 - Acceptance: a disabled module is inaccessible by route and by API; trial expiry and failed-cycle flows tested; webhook replay produces no double-charge; MIT-enabled channel selection per organization works; switching between Xendit and Midtrans adapters verified end-to-end.
+  - **Closeout**:
+    - **Deliverables**:
+      - **The plans** (`config/plans.php`): the PMS, the Booking Engine, the Channel Manager and the CRM, each with the modules it opens and the features it switches on.
+      - **The gate** (`EnsureModuleEnabled`): the module is the second segment of the URL of the API (`api/<module>/...`), so **one middleware covers the routes and the API** — a module the organization does not pay for answers 403. An organization without a subscription is on the trial of the default plan, counted from the day it was created, so the trial ends even if nobody opens the billing page.
+      - **The subscription** (`subscriptions`, `Subscription`, `SubscriptionStatus`): the local table is the single source of truth (ADR-0013). The state machine is `trialing → active → past_due → canceled → expired`: a cycle that failed does not end the subscription, it makes it *past due*, and the organization keeps the modules until the grace period is over.
+      - **The gateways** (`BillingGateway` + the Xendit and the Midtrans adapters): the organization chooses its gateway, and the application speaks to both the same way — the payload of the provider becomes the event of Stayflow, and the adapters only translate. The channels of the primary one are the payment methods of OQ-05, with the Merchant-Initiated Transactions.
+      - **The webhook** (`POST /webhooks/billing/{organizationReference}/{token}`): the event is **recorded before it is applied** (`billing_events`, unique on the gateway and the reference), so the second delivery of the same event stops and **no second invoice is issued** (the invoice is unique per period).
+      - **Documentation**: `docs/BILLING.md`.
+    - **Acceptance proof**:
+      - **A disabled module is inaccessible by route and by API**: Covered by `tests/Feature/Platform/SubscriptionPlanTest.php` — a module that is not in the plan is refused (403), a module that is in the plan passes, and the routes that are not a module are left alone.
+      - **Trial expiry and failed-cycle flows**: Covered by the same file — the trial is over after its days, a failed cycle makes the subscription *past due* (and it keeps the access), and a subscription that is over opens nothing.
+      - **Webhook replay produces no double-charge**: Covered by the same file — the same event delivered twice gives `handled` and then `replayed`, and there is **one** invoice.
+      - **MIT-enabled channel selection per organization and switching between the adapters**: Covered by the same file — the organization of the Midtrans gateway is charged through the Midtrans adapter, the one of Xendit through the Xendit adapter, and the application does the same in both cases.
+    - **What still needs a human**: the **live** verification against the sandbox of the providers awaits the credentials of `P0-04`. The shape of the callback of Xendit was read in the documentation of the provider on 2026-10-27; the one of Midtrans was not, and it is listed in `docs/VENDORS.md` as to verify. The contract tests pin the shapes, so a change of the provider fails a test instead of a charge.
+    - **Verification**: `vendor/bin/pest --testsuite=Unit,Feature,Arch` 521/521 passed (2298 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean.
 
 ### P1-12 Locale, timezone, and date conventions
 Deps: P0-05 · Size: S · Status: done

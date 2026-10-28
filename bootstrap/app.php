@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\SetLocale;
 use App\Modules\Platform\Http\Middleware\AuthorizePermission;
+use App\Modules\Platform\Http\Middleware\EnsureModuleEnabled;
 use App\Modules\Platform\Http\Middleware\SetTenantContext;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
@@ -36,6 +37,11 @@ return Application::configure(basePath: dirname(__DIR__))
             AssignRequestId::class,
             SetLocale::class,
             SetTenantContext::class,
+            // The gate of the plan (P1-11): a module that the
+            // organization does not pay for is not reachable, by route
+            // and by API. It only acts on the URLs of the API
+            // (`api/<module>/...`).
+            EnsureModuleEnabled::class,
         ]);
         // The `locale` cookie is non-sensitive and is set/read by both
         // LocaleController (PHP) and LocaleSwitcher (browser). Keeping it

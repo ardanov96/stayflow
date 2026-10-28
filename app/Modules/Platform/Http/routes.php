@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Platform\Http\Controllers\BillingWebhookController;
 use App\Modules\Platform\Http\Controllers\HealthCheckController;
 use App\Modules\Platform\Http\Controllers\MediaDownloadController;
 use App\Modules\Platform\Infrastructure\Notifications\PostmarkWebhookController;
@@ -40,6 +41,15 @@ Route::get('healthz', HealthCheckController::class)->name('platform.health');
 
 Route::post('webhooks/postmark/{token}', PostmarkWebhookController::class)
     ->name('platform.webhooks.postmark');
+
+/*
+|The webhook of the billing gateway. The URL carries the reference of
+the organization and the shared secret of the endpoint.
+
+*/
+
+Route::post('webhooks/billing/{organizationReference}/{token}', BillingWebhookController::class)
+    ->name('platform.webhooks.billing');
 
 /*
 |--------------------------------------------------------------------------

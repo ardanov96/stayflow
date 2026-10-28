@@ -60,6 +60,16 @@ interface InventoryDayRepository
     public function decrementHeldUnits(int $roomTypeId, array $dates, int $units): void;
 
     /**
+     * Give back the units of nights that are already sold.
+     *
+     * A reservation that changed its nights gives the nights it no longer
+     * covers back to availability. The counter never goes below zero.
+     *
+     * @param  list<string>  $dates
+     */
+    public function decrementSoldUnits(int $roomTypeId, array $dates, int $units): void;
+
+    /**
      * Convert held units into sold units for the given dates: the held
      * counter goes down, the sold counter goes up, in one statement.
      *

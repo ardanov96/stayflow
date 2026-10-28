@@ -131,6 +131,22 @@ interface InventoryService
     ): InventoryHoldDTO;
 
     /**
+     * Give back the units of nights that are already sold.
+     *
+     * A reservation that changed its nights no longer covers the nights
+     * it dropped: they are sold, and they go back to the pool.
+     *
+     * @param  list<string>  $dates
+ */
+    public function releaseSoldUnits(
+        int $propertyId,
+        int $roomTypeId,
+        array $dates,
+        int $units,
+        ?int $userId = null,
+    ): void;
+
+    /**
      * Read a hold of the current organization.
      */
     public function getHold(int $holdId): ?InventoryHoldDTO;

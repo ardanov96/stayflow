@@ -146,6 +146,20 @@ final class EloquentInventoryDayRepository implements InventoryDayRepository
             ]);
     }
 
+    public function decrementSoldUnits(int $roomTypeId, array $dates, int $units): void
+    {
+        if (empty($dates)) {
+            return;
+        }
+
+        InventoryDay::query()
+            ->where('room_type_id', $roomTypeId)
+            ->whereIn('date', $dates)
+            ->update([
+                'sold_units' => DB::raw("CASE WHEN sold_units >= {$units} THEN sold_units - {$units} ELSE 0 END"),
+            ]);
+    }
+
     public function convertHeldUnitsToSold(int $roomTypeId, array $dates, int $units): void
     {
         if (empty($dates)) {

@@ -11,6 +11,7 @@ use App\Modules\Inventory\Application\Actions\HoldInventoryAction;
 use App\Modules\Inventory\Application\Actions\MaterializeInventoryDaysAction;
 use App\Modules\Inventory\Application\Actions\QuoteInventoryAction;
 use App\Modules\Inventory\Application\Actions\ReleaseHoldAction;
+use App\Modules\Inventory\Application\Actions\ReleaseSoldUnitsAction;
 use App\Modules\Inventory\Application\Actions\SetRestrictionsAction;
 use App\Modules\Inventory\Application\Actions\UnblockInventoryAction;
 use App\Modules\Inventory\Application\Ports\HoldRepository;
@@ -34,6 +35,7 @@ final readonly class EloquentInventoryService implements InventoryService
         private HoldInventoryAction $holdInventoryAction,
         private CommitHoldAction $commitHoldAction,
         private ReleaseHoldAction $releaseHoldAction,
+        private ReleaseSoldUnitsAction $releaseSoldUnitsAction,
         private HoldRepository $holdRepository,
         private InventoryDayRepository $inventoryDayRepository,
         private CatalogService $catalogService,
@@ -212,6 +214,28 @@ final readonly class EloquentInventoryService implements InventoryService
         $organizationId = $this->requireOrganizationId();
 
         return $this->holdRepository->find($organizationId, $holdId);
+    }
+
+    /**
+     * @param  list<string>  $dates
+     */
+    public function releaseSoldUnits(
+        int $propertyId,
+        int $roomTypeId,
+        array $dates,
+        int $units,
+        ?int $userId = null,
+    ): void {
+        $orgId = $this->resolveOrganizationId($propertyId);
+
+        $this->releaseSoldUnitsAction->execute(
+            organizationId: $orgId,
+            propertyId: $propertyId,
+            roomTypeId: $roomTypeId,
+            dates: $dates,
+            units: $units,
+            actorId: $userId,
+        );
     }
 
     private function resolveOrganizationId(int $propertyId): int

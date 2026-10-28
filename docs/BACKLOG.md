@@ -43,6 +43,12 @@ Deps: — · Size: M · Status: blocked (human: sandbox credentials)
 - Evaluate channel aggregator, payment gateway, email provider (sandbox access, pricing, API fit). Record ADR-0004, ADR-0005, ADR-0011.
 - Acceptance: three ADRs moved from `proposed` to `accepted`, sandbox credentials available to the team (never committed).
 - **Partial (2026-10-26):** the ADR half of this task is complete — ADR-0004 (Channex), ADR-0005 (Xendit), and ADR-0011 (Postmark) are `accepted` in `docs/DECISIONS.md`. What remains is human-owned: issuing the sandbox credentials to the team (never committed). The task stays `blocked`, not `done`; agents must not close it.
+  - **Partial (2026-10-27):** the API contracts are now written down, so the adapters can be coded against them instead of against a guess. `docs/VENDORS.md` records, for each vendor, what was **verified** in the vendor's own documentation on 2026-10-27 (with the URLs) and what is still **to verify** — the second list is not guessed and the code must not assume it.
+    - **Xendit** (payments): the authentication (Basic auth, the secret key as the username with an empty password, HTTPS only, a test environment that does not touch the banking networks), the callback verification (**`X-Callback-Signature`**, an HMAC SHA256, plus `X-Callback-Timestamp`), the payload envelope (`created`, `business_id`, `event`, `data`, `api_version`), and the payment methods available for Indonesia (virtual accounts, QRIS, the e-wallets, the retail outlets, the cards, the pay-later providers) — which is what OQ-05 asks for.
+    - **Channex** (channel manager): the contract is **published as an OpenAPI specification** (`https://openapi.channex.io/public/openapi.json`), the staging server (`https://staging.channex.io/`), the API key in the user profile, the **test accounts for Booking.com and Airbnb**, the **certification tests** of `P4-10`, and the collections the adapter needs (Availability and Rates, Bookings, Webhooks, Channel API, Channel Codes).
+    - **Postmark** (email): the send endpoint and its body fields, the response (`ErrorCode`, `MessageID`) with `0` meaning accepted and `406` meaning the recipient is inactive, the webhook types, the **retry policy** (retried on 5xx/408/429 and on network failures, dropped on any other 4xx, with a 1/5/10/10/10/15 minute backoff), and the idempotency advice (the `MessageID` and the stable `X-PM-Webhook-Trace-Id`).
+    - **The credential request**: a checklist per vendor, with what to ask for, why, and where the secret goes. It is in `docs/VENDORS.md` §1–3.
+    - The task stays `blocked`: the credentials are human-owned, and 20 tasks wait on them.
 
 ### P0-05 UI shell, design tokens, i18n scaffolding
 Deps: P0-01 · Size: M · Status: done
@@ -98,9 +104,14 @@ Deps: — · Size: L · Status: in-progress
     - **What remains (human)**: a signed agreement with at least one hotel and a named contact person. This is the risk the register carries as R1 ("pilot hotel not secured early"); it is now a meeting and a signature, not an open search.
 
 ### P0-09 Meta developer app and permissions [human]
-Deps: — · Size: S · Status: todo
+Deps: — · Size: S · Status: in-progress
 - Register the developer app and start whatever review the current Instagram API requires for the feed plugin.
 - Acceptance: app registered, review status tracked in `docs/DECISIONS.md` §3.
+  - **Partial (2026-10-27):** the registration is a checklist now; the registration itself is human.
+    - **Deliverable**: `docs/META_APP_RUNBOOK.md` — what the app needs (a Business app with a business portfolio, the `instagram_basic` permission and nothing else, a long-lived token), the eligibility of the account (an Instagram Business or Creator account linked to a Facebook Page, under a verified Meta Business account), the eight steps, the endpoint the plugin will call, the secrets, and the fallback when the review does not come (a static link, per the cut order of `docs/ROADMAP.md` §6 and the risk R6).
+    - **The API contract is verified** (2026-10-27): Meta documents **three** variants of the Instagram API. Stayflow takes the *Instagram API with Unified Login* — the host `graph.facebook.com` and the single permission `instagram_basic` — because the other two need `pages_read_engagement` on top and only make sense for the product-tagging features Stayflow does not have.
+    - **OQ-07 is partly answered** (`docs/DECISIONS.md` §3): the permitted account types and the current API path are known; the **review status** is not, because the request cannot be sent before the business verification of the legal entity, which is human.
+    - **What remains (human)**: creating the Meta Business account, verifying the business, creating the app, and sending the request for the advanced access.
 
 ### P0-10 Architecture tests for module boundaries
 Deps: P0-01 · Size: S · Status: done

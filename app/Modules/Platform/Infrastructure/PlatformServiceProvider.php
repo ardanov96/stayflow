@@ -16,6 +16,11 @@ use App\Modules\Platform\Cache\TenantCache;
 use App\Modules\Platform\Contracts\OrganizationContext;
 use App\Modules\Platform\Domain\Identity\Permission;
 use App\Modules\Platform\Infrastructure\AuditLog\EloquentAuditor;
+use App\Modules\Platform\Infrastructure\Console\Commands\DeployPruneCommand;
+use App\Modules\Platform\Infrastructure\Console\Commands\DeployPublishCommand;
+use App\Modules\Platform\Infrastructure\Console\Commands\DeployRollbackCommand;
+use App\Modules\Platform\Infrastructure\Console\Commands\DeployStatusCommand;
+use App\Modules\Platform\Infrastructure\Console\Commands\DeployVerifyCommand;
 use App\Modules\Platform\Infrastructure\Identity\Adapters\EloquentLoginAttemptRecorder;
 use App\Modules\Platform\Infrastructure\Identity\Adapters\EloquentUserIdentityGateway;
 use App\Modules\Platform\Infrastructure\Identity\Adapters\Google2faTotpGenerator;
@@ -71,6 +76,15 @@ final class PlatformServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // The Platform HTTP routes (the health endpoint used by the
+        // deployment pipeline). Loaded here so the module owns its own
+        // routes, like the other modules do.
+        $routesPath = __DIR__.'/../Http/routes.php';
+
+        if (file_exists($routesPath)) {
+            $this->loadRoutesFrom($routesPath);
+        }
+
         // Wire Laravel Gate to RoleChecker for all known Permission cases
         Gate::before(function ($user, string $ability, array $arguments = []): ?bool {
             if (! $user instanceof User) {

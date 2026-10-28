@@ -19,6 +19,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Version
+    |--------------------------------------------------------------------------
+    |
+    | The release identifier of the deployed build. The deployment pipeline
+    | writes it into the environment of the release (and the health check
+    | reports it), so a deployment can always be traced back to a commit.
+    |
+    */
+
+    'version' => env('APP_VERSION', 'dev'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |

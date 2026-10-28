@@ -472,9 +472,21 @@ Deps: P0-02 · Size: S · Status: todo
 - Acceptance: private invoices are never publicly reachable; tests use a fake disk.
 
 ### P1-15 Notification framework
-Deps: P1-12 · Size: M · Status: todo
+Deps: P1-12 · Size: M · Status: done
 - Channels (mail now, WhatsApp-ready), templates per locale, delivery log, bounce/complaint webhook intake from the email provider.
 - Acceptance: template rendering tests per locale; failed delivery recorded and visible.
+  - **Closeout**:
+    - **Deliverables**:
+      - **The channel** (`Platform\Contracts\NotificationChannel`): mail is implemented, WhatsApp is one class and one line in the dispatcher — the caller never names the channel it does not know.
+      - **The dispatcher** (`NotificationDispatcher`): renders the template in the locale of the **recipient**, delivers it, and records every attempt.
+      - **The delivery log** (`notification_deliveries` + `NotificationDeliveryLog`): one row per attempt, with the tenant, the template, the locale, the recipient, the status (`sent`, `failed`, `bounced`, `complained`), the identifier of the provider and the reason of a failure. A notification that failed silently is a notification that never arrives, and nobody notices until a guest complains.
+      - **The webhook of the provider** (`POST /webhooks/postmark/{token}`): a bounce or a spam complaint marks the delivery. The endpoint is public, so it carries a shared secret in the path, compared in constant time, and no middleware (the provider knows nothing about a session).
+      - **Documentation**: `docs/NOTIFICATIONS.md`.
+    - **Acceptance proof**:
+      - **Template rendering tests per locale**: Covered by `tests/Feature/Platform/NotificationFrameworkTest.php` — the template renders in `id`, `en` and `zh` with the text of the language file of that locale, and the three renderings differ.
+      - **Failed delivery recorded and visible**: Covered by the same file — a delivery that failed is recorded with the reason, and `failedFor()` returns it; a delivery that worked is recorded too.
+      - **The bounce and the complaint**: Covered by the same file — a bounce marks the delivery as `bounced`, and a callback with the wrong secret is refused.
+    - **Verification**: `vendor/bin/pest --testsuite=Unit,Feature,Arch` 512/512 passed (2266 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean.
 
 ### P1-16 Tenant-aware error reporting context
 Deps: P0-07, P1-01 · Size: S · Status: done

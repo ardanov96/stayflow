@@ -18,6 +18,10 @@ return [
 
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
+        // The shared secret of the webhook of the provider: the bounce
+        // and the complaint of a message are posted to
+        // /webhooks/postmark/{token} (task P1-15).
+        'webhook_token' => env('POSTMARK_WEBHOOK_TOKEN'),
     ],
 
     'ses' => [

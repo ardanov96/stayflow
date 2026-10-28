@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Platform\Http\Controllers\HealthCheckController;
+use App\Modules\Platform\Infrastructure\Notifications\PostmarkWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,3 +22,20 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('healthz', HealthCheckController::class)->name('platform.health');
+
+/*
+|--------------------------------------------------------------------------
+| The webhook of the email provider
+|--------------------------------------------------------------------------
+|
+| The provider posts the bounces and the spam complaints of the messages
+| it could not deliver. The endpoint carries a shared secret in the path
+| (compared in constant time), because the endpoint is public.
+|
+| It carries no middleware on purpose: the provider knows nothing about
+| a session, and a CSRF token would reject every callback.
+|
+*/
+
+Route::post('webhooks/postmark/{token}', PostmarkWebhookController::class)
+    ->name('platform.webhooks.postmark');

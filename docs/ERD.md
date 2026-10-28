@@ -133,6 +133,21 @@ erDiagram
         datetime deleted_at
         int property_id_key UK
     }
+    notification_deliveries {
+        int id PK
+        ref organization_id FK
+        ref property_id FK
+        string channel
+        string template
+        string locale
+        string recipient
+        string status
+        ref provider_message_id
+        string error
+        datetime delivered_at
+        datetime created_at
+        datetime updated_at
+    }
     organizations {
         int id PK
         string name
@@ -328,6 +343,8 @@ erDiagram
     properties ||--o{ memberships : "property_id"
     organizations ||--o{ memberships : "organization_id"
     users ||--o{ memberships : "user_id"
+    properties ||--o{ notification_deliveries : "property_id"
+    organizations ||--o{ notification_deliveries : "organization_id"
     organizations ||--o{ properties : "organization_id"
     amenities ||--o{ property_amenities : "amenity_id"
     properties ||--o{ property_amenities : "property_id"
@@ -368,6 +385,7 @@ erDiagram
 | `inventory_holds` | inventory |
 | `login_attempts` | platform |
 | `memberships` | platform |
+| `notification_deliveries` | *(no model)* |
 | `organizations` | platform |
 | `password_reset_tokens` | *(no model)* |
 | `properties` | catalog |
@@ -383,7 +401,7 @@ erDiagram
 | `tax_rules` | catalog |
 | `users` | *(no model)* |
 
-The tables marked *(no model)* have no Eloquent model yet: `password_reset_tokens`, `property_amenities`, `room_type_amenities`, `sessions`, `users`.
+The tables marked *(no model)* have no Eloquent model yet: `notification_deliveries`, `password_reset_tokens`, `property_amenities`, `room_type_amenities`, `sessions`, `users`.
 <!-- END GENERATED -->
 
 ## Notes

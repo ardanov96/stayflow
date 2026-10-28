@@ -11,8 +11,10 @@ use App\Modules\Platform\Application\Identity\Ports\LoginAttemptRecorder;
 use App\Modules\Platform\Application\Identity\Ports\RoleChecker;
 use App\Modules\Platform\Application\Identity\Ports\TotpGenerator;
 use App\Modules\Platform\Application\Identity\Ports\UserIdentityGateway;
+use App\Modules\Platform\Application\Notifications\NotificationDispatcher;
 use App\Modules\Platform\Application\OrganizationContextManager;
 use App\Modules\Platform\Cache\TenantCache;
+use App\Modules\Platform\Contracts\NotificationDeliveryLog;
 use App\Modules\Platform\Contracts\OrganizationContext;
 use App\Modules\Platform\Domain\Identity\Permission;
 use App\Modules\Platform\Infrastructure\AuditLog\EloquentAuditor;
@@ -27,6 +29,8 @@ use App\Modules\Platform\Infrastructure\Identity\Adapters\EloquentUserIdentityGa
 use App\Modules\Platform\Infrastructure\Identity\Adapters\Google2faTotpGenerator;
 use App\Modules\Platform\Infrastructure\Identity\Adapters\LaravelAuthMailer;
 use App\Modules\Platform\Infrastructure\Identity\EloquentRoleChecker;
+use App\Modules\Platform\Infrastructure\Notifications\EloquentNotificationDeliveryLog;
+use App\Modules\Platform\Infrastructure\Notifications\MailNotificationChannel;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -73,6 +77,21 @@ final class PlatformServiceProvider extends ServiceProvider
         // singleton just means the same instance is reused within a
         // request (it does not cache anything).
         $this->app->singleton(RoleChecker::class, EloquentRoleChecker::class);
+
+        // P1-15 (Notifications): the delivery log, and the dispatcher
+        // with the channels that are implemented. WhatsApp is not one of
+        // them yet; it will be another NotificationChannel, and nothing
+        // else has to change.
+        $this->app->singleton(NotificationDeliveryLog::class, EloquentNotificationDeliveryLog::class);
+
+        $this->app->singleton(NotificationDispatcher::class, function ($app): NotificationDispatcher {
+            return new NotificationDispatcher(
+                channels: [
+                    $app->make(MailNotificationChannel::class),
+                ],
+                log: $app->make(NotificationDeliveryLog::class),
+            );
+        });
     }
 
     public function boot(): void

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Platform\Http\Controllers\HealthCheckController;
+use App\Modules\Platform\Http\Controllers\MediaDownloadController;
 use App\Modules\Platform\Infrastructure\Notifications\PostmarkWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -39,3 +40,19 @@ Route::get('healthz', HealthCheckController::class)->name('platform.health');
 
 Route::post('webhooks/postmark/{token}', PostmarkWebhookController::class)
     ->name('platform.webhooks.postmark');
+
+/*
+|--------------------------------------------------------------------------
+| The private files
+|--------------------------------------------------------------------------
+|
+| A private file (an invoice, a document of a guest) is not served by the
+| web server: it lives on a disk the web server does not serve. The only
+| way to reach it is this route, and the route is signed and expires.
+|
+*/
+
+Route::get('media/private/{path}', MediaDownloadController::class)
+    ->middleware('signed')
+    ->where('path', '.*')
+    ->name('platform.media.private');

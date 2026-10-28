@@ -14,6 +14,7 @@ use App\Modules\Platform\Application\Identity\Ports\UserIdentityGateway;
 use App\Modules\Platform\Application\Notifications\NotificationDispatcher;
 use App\Modules\Platform\Application\OrganizationContextManager;
 use App\Modules\Platform\Cache\TenantCache;
+use App\Modules\Platform\Contracts\MediaStorage;
 use App\Modules\Platform\Contracts\NotificationDeliveryLog;
 use App\Modules\Platform\Contracts\OrganizationContext;
 use App\Modules\Platform\Domain\Identity\Permission;
@@ -29,6 +30,7 @@ use App\Modules\Platform\Infrastructure\Identity\Adapters\EloquentUserIdentityGa
 use App\Modules\Platform\Infrastructure\Identity\Adapters\Google2faTotpGenerator;
 use App\Modules\Platform\Infrastructure\Identity\Adapters\LaravelAuthMailer;
 use App\Modules\Platform\Infrastructure\Identity\EloquentRoleChecker;
+use App\Modules\Platform\Infrastructure\Media\FilesystemMediaStorage;
 use App\Modules\Platform\Infrastructure\Notifications\EloquentNotificationDeliveryLog;
 use App\Modules\Platform\Infrastructure\Notifications\MailNotificationChannel;
 use Illuminate\Support\Facades\Gate;
@@ -83,6 +85,16 @@ final class PlatformServiceProvider extends ServiceProvider
         // them yet; it will be another NotificationChannel, and nothing
         // else has to change.
         $this->app->singleton(NotificationDeliveryLog::class, EloquentNotificationDeliveryLog::class);
+
+        // P1-14 (Media storage): the private files and the public files
+        // live on two different disks, and only the public ones have a
+        // public URL.
+        $this->app->singleton(MediaStorage::class, fn (): FilesystemMediaStorage => new FilesystemMediaStorage(
+            privateDisk: (string) config('media.private_disk'),
+            publicDisk: (string) config('media.public_disk'),
+            publicUrl: (string) config('media.public_url'),
+            privateDiskTemporaryUrls: (bool) config('media.private_disk_temporary_urls'),
+        ));
 
         $this->app->singleton(NotificationDispatcher::class, function ($app): NotificationDispatcher {
             return new NotificationDispatcher(

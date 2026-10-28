@@ -467,9 +467,20 @@ Deps: P1-06 · Size: S · Status: todo
 - Acceptance: settings changes audited; cache invalidation tested.
 
 ### P1-14 Media storage abstraction
-Deps: P0-02 · Size: S · Status: todo
+Deps: P0-02 · Size: S · Status: done
 - S3-compatible storage with signed URLs for private files, public CDN paths for property images.
 - Acceptance: private invoices are never publicly reachable; tests use a fake disk.
+  - **Closeout**:
+    - **Deliverables**:
+      - **The contract** (`Platform\Contracts\MediaStorage`): `putPrivate()`, `privateUrl()`, `putPublic()`, `publicUrl()`, `getPrivate()`, `deletePrivate()`, `deletePublic()`.
+      - **The implementation** (`FilesystemMediaStorage`): two disks, on purpose. The **private** disk (the invoices, the documents of a guest) is not served by the web server; the **public** disk (the photos of a room type) is served by the CDN. `config/media.php` names the two disks and the URL of the CDN.
+      - **The private file is served by a signed route** (`/media/private/{path}`, the `signed` middleware) that expires, and the file is read from the private disk by the controller. On S3 the temporary URL of the provider is used instead (`MEDIA_PRIVATE_TEMPORARY_URLS`).
+    - **Acceptance proof**:
+      - **Private invoices are never publicly reachable**: Covered by `tests/Feature/Platform/MediaStorageTest.php` — the file is on the private disk and on no other, the URL carries a signature and an expiry, the route without a valid signature answers 403, and the signed route returns the file.
+      - **Tests use a fake disk**: Covered by the same file (`Storage::fake()` for the two disks).
+      - **Public CDN paths for property images**: Covered by the same file — a public file is on the public disk and its URL is the one of the CDN.
+    - **A hole the test caught**: the temporary URL of the **local** disk is **not** signed, so a private file on it would have been reachable without a signature. The choice between the URL of the provider and the signed route is therefore made by the configuration, and the default is the signed route.
+    - **Verification**: `vendor/bin/pest --testsuite=Unit,Feature,Arch` 514/514 passed, `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean.
 
 ### P1-15 Notification framework
 Deps: P1-12 · Size: M · Status: done

@@ -85,6 +85,17 @@ final class PlatformServiceProvider extends ServiceProvider
             $this->loadRoutesFrom($routesPath);
         }
 
+        // The deployment pipeline (P0-06): publish a release, probe the
+        // health endpoint, roll back automatically when the release does
+        // not survive the probe.
+        $this->commands([
+            DeployPublishCommand::class,
+            DeployRollbackCommand::class,
+            DeployVerifyCommand::class,
+            DeployStatusCommand::class,
+            DeployPruneCommand::class,
+        ]);
+
         // Wire Laravel Gate to RoleChecker for all known Permission cases
         Gate::before(function ($user, string $ability, array $arguments = []): ?bool {
             if (! $user instanceof User) {

@@ -446,9 +446,20 @@ Deps: P1-01, P0-04 · Size: L · Status: todo
 - Acceptance: a disabled module is inaccessible by route and by API; trial expiry and failed-cycle flows tested; webhook replay produces no double-charge; MIT-enabled channel selection per organization works; switching between Xendit and Midtrans adapters verified end-to-end.
 
 ### P1-12 Locale, timezone, and date conventions
-Deps: P0-05 · Size: S · Status: todo
+Deps: P0-05 · Size: S · Status: done
 - Helpers for property-local dates, UTC storage, stay-date `DATE` semantics, localized formatting.
 - Acceptance: tests around midnight boundaries for properties in different timezones; no ad-hoc date formatting in code (lint rule or review checklist).
+  - **Closeout**:
+    - **Deliverables**:
+      - **The helpers** (`app\Support/Date/`): `StayDate` (a calendar day of a property, a `DATE` and never an instant), `PropertyClock` (the clock of a property: `now()`, `today()`, `businessDate()`), `DateFormatter` (the formatting for the reader, through ICU: the `id`, `en` and `zh` of OQ-06), `UtcTimestamp` (the instant, as it is stored, always in UTC). They do not depend on the framework, and the instant can be injected.
+      - **The rule**: the day of a hotel starts when the clock of the hotel says so. The booking window and the materialization of the inventory days are counted in the **days of the property**, never in the days of the server.
+      - **The lint rule**: `tests/Arch/DateFormattingTest.php` fails the build when a date is formatted by hand outside `app/Support/Date` (no `->format(`, no `date('...')`, no `strftime(`). It is a test and not a convention on purpose.
+      - **The refactor**: the inventory engine computed "today" with the timezone of the server (`new DateTimeImmutable('today')`). `InventoryWindow::isWithinWindow()` and `defaultMaterializationEndDate()` now take the timezone of the property, and every `->format('Y-m-d')` of the module goes through `StayDate`.
+      - **Documentation**: `docs/DATES.md` (the three kinds of time, the helpers, the rule, what it caught, and what is still open: the business date of the night audit, the stay date of a late arrival, the fiscal year of the invoices).
+    - **Acceptance proof**:
+      - **Tests around midnight boundaries for properties in different timezones**: Covered by `tests/Feature/Inventory/TimezoneBoundaryTest.php` — at 17:00 UTC the same night is **refused** for the hotel in Bali (the 28th is already its today) and **accepted** for the hotel in Los Angeles (the 27th is still its today), and the materialized window of the Bali property starts on the 28th. The same boundary is proved at the unit level in `tests/Unit/Support/Date/PropertyClockTest.php`.
+      - **No ad-hoc date formatting in code**: Covered by `tests/Arch/DateFormattingTest.php` (the lint rule) and by `tests/Unit/Support/Date/StayDateTest.php` (the parsing, the arithmetic, the range and the comparison of a stay date).
+    - **Verification**: `vendor/bin/pest --testsuite=Unit,Feature,Arch` 498/498 passed (2219 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean.
 
 ### P1-13 Settings framework
 Deps: P1-06 · Size: S · Status: todo

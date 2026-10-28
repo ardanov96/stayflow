@@ -18,7 +18,7 @@ Applies to humans and AI agents alike. Where a rule says "CI enforces", a failin
    Full policy and the rounding/tax rules live in `docs/MONEY.md`. Money is
    represented by `App\Support\Money\Money`; tax and service charge by
    `App\Support\Money\TaxRule` and `App\Support\Money\TaxCalculator`.
-2. **Time:** store UTC timestamps; stay dates are `DATE` in the property's timezone; use the date/time helpers from **P1-12** (pending — until it lands, keep stay-date arithmetic inside `App\Support`); never format dates by hand.
+2. **Time:** store UTC timestamps; stay dates are `DATE` in the property's timezone; use the date/time helpers from **P1-12** (`App\Support\Date`: `StayDate`, `PropertyClock`, `DateFormatter`, `UtcTimestamp`); never format dates by hand — `tests/Arch/DateFormattingTest.php` fails the build when it happens. See `docs/DATES.md`.
 3. **Migrations:**
    - Never edit a migration that has shipped; add a new one.
    - Expand → migrate → contract: every migration must be compatible with the previous app release.

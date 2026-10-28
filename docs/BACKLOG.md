@@ -477,9 +477,20 @@ Deps: P0-05 · Size: S · Status: done
     - **Verification**: `vendor/bin/pest --testsuite=Unit,Feature,Arch` 498/498 passed (2219 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean.
 
 ### P1-13 Settings framework
-Deps: P1-06 · Size: S · Status: todo
+Deps: P1-06 · Size: S · Status: done
 - Typed per-property and per-organization settings with defaults and validation.
 - Acceptance: settings changes audited; cache invalidation tested.
+  - **Closeout**:
+    - **Deliverables**:
+      - **The typed settings** (`config/settings.php` + `SettingDefinition`): every setting of the application is declared with its type (`string`, `int`, `bool`, `decimal`), its default and its scope (`organization` or `property`). A setting that is not declared **does not exist** — reading it is an error, not a null — and a value that does not match the type (or the choices) is **refused**.
+      - **The settings** (`settings` table + `Settings` contract + `EloquentSettings`): the scope of the declaration decides where the value is stored, not the caller; a setting of a property without a property is refused.
+      - **Writing a setting** validates the value, **invalidates the cache** and **audits** the change (`settings.updated`, with the old value, the new value and the key).
+      - **Documentation**: `docs/SETTINGS.md`.
+    - **Acceptance proof**:
+      - **Settings changes audited**: Covered by `tests/Feature/Platform/SettingsTest.php` — the change is in the audit log with the old value, the new value and the key.
+      - **Cache invalidation tested**: Covered by the same file — a value is read and kept (a change made behind the settings is not seen), and a change **through** the settings invalidates the cache at once.
+      - **Typed with defaults and validation**: Covered by the same file — the default is returned when nothing was written, a value that does not match the type is refused, a value outside the choices is refused, and a setting that does not exist is refused.
+    - **Verification**: `vendor/bin/pest --testsuite=Unit,Feature,Arch` 529/529 passed (2317 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean.
 
 ### P1-14 Media storage abstraction
 Deps: P0-02 · Size: S · Status: done

@@ -297,6 +297,16 @@ erDiagram
         text payload
         int last_activity
     }
+    settings {
+        int id PK
+        ref organization_id FK
+        ref property_id FK
+        string key UK
+        text value
+        int updated_by FK
+        datetime created_at
+        datetime updated_at
+    }
     subscription_invoices {
         int id PK
         ref organization_id FK
@@ -406,6 +416,9 @@ erDiagram
     room_types ||--o{ room_units : "room_type_id"
     properties ||--o{ room_units : "property_id"
     organizations ||--o{ room_units : "organization_id"
+    users ||--o{ settings : "updated_by"
+    properties ||--o{ settings : "property_id"
+    organizations ||--o{ settings : "organization_id"
     subscriptions ||--o{ subscription_invoices : "subscription_id"
     organizations ||--o{ subscription_invoices : "organization_id"
     organizations ||--o{ subscriptions : "organization_id"
@@ -439,12 +452,13 @@ erDiagram
 | `room_types` | catalog |
 | `room_units` | catalog |
 | `sessions` | *(no model)* |
+| `settings` | *(no model)* |
 | `subscription_invoices` | *(no model)* |
 | `subscriptions` | *(no model)* |
 | `tax_rules` | catalog |
 | `users` | *(no model)* |
 
-The tables marked *(no model)* have no Eloquent model yet: `billing_events`, `notification_deliveries`, `password_reset_tokens`, `property_amenities`, `room_type_amenities`, `sessions`, `subscription_invoices`, `subscriptions`, `users`.
+The tables marked *(no model)* have no Eloquent model yet: `billing_events`, `notification_deliveries`, `password_reset_tokens`, `property_amenities`, `room_type_amenities`, `sessions`, `settings`, `subscription_invoices`, `subscriptions`, `users`.
 <!-- END GENERATED -->
 
 ## Notes

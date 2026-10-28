@@ -18,6 +18,7 @@ use App\Modules\Platform\Cache\TenantCache;
 use App\Modules\Platform\Contracts\MediaStorage;
 use App\Modules\Platform\Contracts\NotificationDeliveryLog;
 use App\Modules\Platform\Contracts\OrganizationContext;
+use App\Modules\Platform\Contracts\Settings;
 use App\Modules\Platform\Contracts\SubscriptionRepository;
 use App\Modules\Platform\Domain\Identity\Permission;
 use App\Modules\Platform\Infrastructure\AuditLog\EloquentAuditor;
@@ -38,6 +39,7 @@ use App\Modules\Platform\Infrastructure\Identity\EloquentRoleChecker;
 use App\Modules\Platform\Infrastructure\Media\FilesystemMediaStorage;
 use App\Modules\Platform\Infrastructure\Notifications\EloquentNotificationDeliveryLog;
 use App\Modules\Platform\Infrastructure\Notifications\MailNotificationChannel;
+use App\Modules\Platform\Infrastructure\Settings\EloquentSettings;
 use App\Modules\Platform\Infrastructure\Subscriptions\EloquentSubscriptionRepository;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -106,6 +108,10 @@ final class PlatformServiceProvider extends ServiceProvider
         // subscription is the single source of truth (ADR-0013), and the
         // organization chooses its gateway.
         $this->app->singleton(SubscriptionRepository::class, EloquentSubscriptionRepository::class);
+
+        // P1-13 (Settings): the typed settings of the organization and
+        // of its properties.
+        $this->app->singleton(Settings::class, EloquentSettings::class);
 
         $this->app->singleton(BillingGatewaySelector::class, fn (): BillingGatewaySelector => new BillingGatewaySelector([
             'xendit' => new XenditBillingGateway,

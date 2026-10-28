@@ -1,0 +1,115 @@
+name: deploy
+
+# The deployment pipeline of task P0-06.
+#
+# A push to main publishes a release to the staging server. The release is
+# only kept when the health endpoint answers 200; when it does not, the
+# server rolls back to the previous release by itself and this workflow
+# fails.
+#
+# The job is skipped until the server is provisioned: set the repository
+# variable STAGING_HOST (and the secrets below) to enable it. See
+# docs/STAGING.md.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  staging:
+    name: deploy staging
+    if: ${{ vars.STAGING_HOST != '' }}
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+          extensions: mbstring, pdo_mysql, redis, zip
+          tools: composer:v2
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: composer install --no-dev --prefer-dist --optimize-autoloader --no-progress --no-interaction
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Build the frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      - name: Configure SSH
+        env:
+          STAGING_SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+          STAGING_KNOWN_HOSTS: ${{ secrets.STAGING_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$STAGING_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$STAGING_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload the release
+        env:
+          STAGING_HOST: ${{ vars.STAGING_HOST }}
+          STAGING_USER: ${{ vars.STAGING_USER }}
+          STAGING_ROOT: ${{ vars.STAGING_ROOT }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "$STAGING_USER@$STAGING_HOST" "mkdir -p '$STAGING_ROOT/upload'"
+          rsync -az --delete \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='node_modules' \
+            --exclude='tests' \
+            --exclude='.env' \
+            --exclude='storage/logs/*' \
+            --exclude='storage/framework/cache/*' \
+            --exclude='storage/framework/sessions/*' \
+            --exclude='storage/framework/views/*' \
+            ./ "$STAGING_USER@$STAGING_HOST:$STAGING_ROOT/upload/"
+
+      - name: Publish and verify
+        env:
+          STAGING_HOST: ${{ vars.STAGING_HOST }}
+          STAGING_USER: ${{ vars.STAGING_USER }}
+          STAGING_ROOT: ${{ vars.STAGING_ROOT }}
+          STAGING_HEALTH_URL: ${{ vars.STAGING_HEALTH_URL }}
+        run: |
+          # The command publishes the release, probes the health endpoint
+          # and rolls back to the previous release when the probe fails.
+          # A non-zero exit code means the server is back on the previous
+          # release and this deployment failed.
+          ssh -i ~/.ssh/id_ed25519 "$STAGING_USER@$STAGING_HOST" \
+            "cd '$STAGING_ROOT/upload' && php artisan deploy:publish \
+              --source='$STAGING_ROOT/upload' \
+              --health-url='$STAGING_HEALTH_URL' \
+              --skip-dependencies"
+
+      - name: Prune the old releases
+        env:
+          STAGING_HOST: ${{ vars.STAGING_HOST }}
+          STAGING_USER: ${{ vars.STAGING_USER }}
+          STAGING_ROOT: ${{ vars.STAGING_ROOT }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 "$STAGING_USER@$STAGING_HOST" \
+            "cd '$STAGING_ROOT/upload' && php artisan deploy:prune --keep=5"

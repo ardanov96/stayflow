@@ -71,19 +71,38 @@ The events are published with the `event()` helper, not with the
 `Dispatchable` trait: in Laravel 11+ that trait dispatches queued jobs,
 not events.
 
-## 5. What is not built yet
+## 5. Creating a reservation (P2-02)
 
-- **No persistence.** The tables (`reservations`, `reservation_rooms`,
-  `reservation_events`, `reservation_guests`) and the repository land with
-  `P2-02` (create a reservation) and `P2-03` (modify it).
-- **No link with the inventory yet.** The hold of the booking engine
-  becomes the reservation of `P2-03`; the invariant 2 (each night has
-  inventory held or sold equal to the number of rooms) is checked when
-  the nights are written.
+`CreateReservationAction` creates the reservation of the staff of the
+hotel:
+
+1. the **quote** of the inventory decides the availability of the nights
+   and the price of the stay (the staff sees the same quote before
+   pressing the button);
+2. the inventory is **held**, the reservation is written, and the hold is
+   **committed** — the units become sold. The three happen in **one
+   transaction**: either the guest has a room and the inventory says so,
+   or nothing happened at all.
+3. the request is **idempotent**: the idempotency key gives the same
+   hold, and the same hold gives the same reservation. A double submit
+   creates **one** reservation and takes the room **once**.
+
+The four tables are `reservations`, `reservation_rooms`,
+`reservation_guests` and `reservation_events` (the trail). The code of a
+reservation is unique per property and carries the day of the property.
+
+## 6. What is not built yet
+
 - **No screen.** The PMS reads the reservation through the contract of
-  the module, which lands with `P2-02`.
+  the module; the screen belongs to `P2-17`.
+- **The modification** of a reservation lands with `P2-03` (the
+  versioned modifications of the aggregate are ready for it).
+- **The assignment of a physical room** lands with `P2-05`.
+- **The guest** of a reservation is a soft reference: the `guests` table
+  lands with the Guests module (`P5-01`), and the constraint is added
+  there.
 
-## 6. Related documents
+## 7. Related documents
 
 - `docs/ARCHITECTURE.md` §7 — the state machine and the booking flow.
 - `docs/DOMAIN_MODEL.md` §2 — the entities, §3 — the invariants.

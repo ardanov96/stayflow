@@ -562,9 +562,22 @@ Deps: P1-09 · Size: L · Status: done
     - **Verification**: `vendor/bin/pest --testsuite=Unit,Feature,Arch` 590/590 passed (2429 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean.
 
 ### P2-02 Create reservation (staff)
-Deps: P2-01, P1-07 · Size: M · Status: todo
+Deps: P2-01, P1-07 · Size: M · Status: done
 - Staff UI/API: choose dates, room type, rate plan, occupancy, guest; price quote; hold + commit in one transaction.
 - Acceptance: cannot create when unavailable or restricted; double-submit creates one reservation.
+  - **Closeout**:
+    - **Deliverables**:
+      - **The persistence**: four tables (`reservations`, `reservation_rooms`, `reservation_guests`, `reservation_events`), the repository contract, and the Eloquent implementation. The code of a reservation is unique per property and carries the day of the property, so the staff reads it out loud; the `version` is the optimistic lock of the row.
+      - **The action** (`CreateReservationAction`): the quote of the inventory decides the availability **and** the price (the staff sees the same quote before pressing the button), and the whole thing happens in **one transaction**: the inventory is held, the reservation is written, and the hold is committed — the units become sold. Either the guest has a room and the inventory says so, or nothing happened.
+      - **The request is idempotent**: the idempotency key gives the same hold, and the same hold gives the same reservation. A double submit therefore creates **one** reservation and takes the room **once**.
+      - **The service and the endpoint**: `Reservations\Contracts\ReservationService` (the seam for the other modules) and `POST /api/reservations`, behind the `reservations.create` permission, with a `FormRequest` that validates the dates, the occupancy and the idempotency key.
+      - **The trail and the audit**: every change is an entry of `reservation_events`, and the creation is audited (`reservation.created`).
+    - **Acceptance proof**:
+      - **Cannot create when unavailable or restricted**: Covered by `tests/Feature/Reservations/CreateReservationTest.php` — a room type without availability and a night closed to arrival are both refused, and **no reservation is written**.
+      - **Double-submit creates one reservation**: Covered by the same file — the same idempotency key twice gives the same reservation, one row, one hold, and the room is sold once.
+      - **The endpoint**: Covered by `tests/Feature/Reservations/ReservationApiTest.php` — a user without the permission is refused (403), the endpoint creates the reservation (201), and a request without the idempotency key is a validation error.
+    - **What is not built yet**: the screen for the staff (the PMS front end, `P2-17`), the modification of a reservation (`P2-03`), and the assignment of a physical room (`P2-05`).
+    - **Verification**: `vendor/bin/pest --testsuite=Unit,Feature,Arch` 601/601 passed (2464 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean.
 
 ### P2-03 Modify reservation
 Deps: P2-02 · Size: L · Status: todo

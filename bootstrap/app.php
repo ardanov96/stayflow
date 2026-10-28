@@ -10,6 +10,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Sentry\Laravel\Integration;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -50,5 +51,15 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // The Sentry package does not capture the exceptions on its own
+        // (since v4 the application has to call it), so every reported
+        // exception is handed to Sentry here.
         //
+        // The tenant of the event is attached by the `before_send` hook of
+        // `config/sentry.php` (`SentryTenantContext`): it reads the tenant
+        // that is active when the event is sent, so it works the same for
+        // a request and for a queued job.
+        $exceptions->reportable(function (Throwable $e): void {
+            Integration::captureUnhandledException($e);
+        });
     })->create();

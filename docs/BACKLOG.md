@@ -544,9 +544,22 @@ Deps: P0-07, P1-01 · Size: S · Status: done
 ## P2 — PMS (weeks 5–12)
 
 ### P2-01 Reservation aggregate and state machine
-Deps: P1-09 · Size: L · Status: todo
+Deps: P1-09 · Size: L · Status: done
 - Aggregate, statuses and transitions per `docs/ARCHITECTURE.md` §7, domain events, versioned modifications.
 - Acceptance: exhaustive unit tests for allowed and forbidden transitions; events dispatched after commit.
+  - **Closeout**:
+    - **Deliverables**:
+      - **The aggregate** (`App\Modules\Reservations\Domain\Reservation`): it owns the state, the rooms (a room type, a rate plan, the nights and the price of each night), the **version** (the number of the change, the optimistic lock of the row) and the events it recorded. Pure domain: no persistence, no framework.
+      - **The state machine** (`ReservationStatus`): `pending_payment`, `confirmed`, `checked_in`, `checked_out`, `cancelled`, `no_show`, `expired`, with the transitions of `docs/ARCHITECTURE.md` §7. A move that is not on the machine is **refused** (`InvalidReservationTransition`), never forced. The four final states cannot be modified any more.
+      - **The creation paths**: `pendingPayment()` for the booking engine (the guest has not paid) and `confirmed()` for the staff of the hotel and the OTAs; `restore()` reads an existing reservation without recording a creation.
+      - **The versioned modifications**: a modification (the dates, the guests, the number of people) is **not a state** but a versioned event; the version is bumped and `ReservationModified` is recorded.
+      - **The events** (`ReservationCreated`, `ReservationStatusChanged`, `ReservationModified`, `RoomAssigned`): all of them implement `ShouldDispatchAfterCommit`, so a listener never observes a change that was rolled back.
+      - **Documentation**: `docs/RESERVATIONS.md`.
+    - **Acceptance proof**:
+      - **Exhaustive unit tests for allowed and forbidden transitions**: Covered by `tests/Unit/Reservations/ReservationStateMachineTest.php` — **every pair of the seven states** (49 of them) is tried: the ones on the machine work, the others are refused and leave the reservation where it was. The same file covers the versioned modifications, the assignment of a physical room and the refusal to modify a reservation that is over.
+      - **Events dispatched after commit**: Covered by `tests/Feature/Reservations/ReservationEventsTest.php` — the event of a transaction that is **rolled back** is never published, and the event of a transaction that **commits** is published once.
+    - **What is not built yet**: the persistence (the tables and the repository) lands with `P2-02` and `P2-03`; the link with the inventory (the hold that becomes the reservation, and invariant 2) lands with them too.
+    - **Verification**: `vendor/bin/pest --testsuite=Unit,Feature,Arch` 590/590 passed (2429 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean.
 
 ### P2-02 Create reservation (staff)
 Deps: P2-01, P1-07 · Size: M · Status: todo

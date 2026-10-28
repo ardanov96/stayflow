@@ -131,11 +131,19 @@ Field lists show the important columns only; every tenant table also has `id`, `
 - **Occupancy %** = sold room-nights / available room-nights.
 - **ADR** = room revenue / sold room-nights. **RevPAR** = room revenue / available room-nights.
 - Reports use the business date, not the wall-clock timestamp.
+## 5. Modeling questions (P0-03)
 
-## 5. Open modeling questions (resolve in P0-03)
+The physical schema is in `docs/ERD.md`. It is generated from the
+migrations, so it always describes the database that exists.
 
-- Do pilots sell by room type only, or do any need unit-level selling (villas with unique units)?
-- Per-person pricing vs flat; child age bands; extra-bed fees.
-- Packages that bundle multiple services (spa, transfers) — MVP treats them as add-ons.
-- Multi-room bookings and groups: MVP supports multi-room in one reservation; group blocks are deferred.
-- Deposit policies and refund rules per rate plan.
+| # | Question | Status | Decided by |
+|---|---|---|---|
+| 1 | Do pilots sell by room type only, or do any need unit-level selling (villas with unique units)? | **Resolved** | OQ-01: per room type only. `RoomUnit` is kept for housekeeping and room assignment, but it is not a sellable unit; per-unit pricing is deferred from MVP. |
+| 2 | Per-person pricing vs flat; child age bands; extra-bed fees. | **Open** | Needs the pilot: OQ-11. |
+| 3 | Packages that bundle multiple services (spa, transfers). | **Resolved for the MVP** | A package is an add-on: a set of extras attached to a reservation and priced per stay. The Booking Engine exposes add-ons (§2), so no package entity is needed before the pilot asks for one. |
+| 4 | Multi-room bookings and groups. | **Resolved for the MVP** | One reservation can hold several rooms; group blocks are deferred from MVP (`docs/ROADMAP.md` §7). |
+| 5 | Deposit policies and refund rules per rate plan. | **Open** | Needs the pilot and the gateway rules: OQ-12. |
+
+The two questions that are still open are logged in
+`docs/DECISIONS.md` §3 (OQ-11, OQ-12) and are part of the pilot
+interview of task `P0-08`.

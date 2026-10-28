@@ -27,9 +27,16 @@ Deps: P0-01 · Size: S · Status: done
 - Acceptance: from a fresh clone, a new developer reaches a running app by following README only; works on Linux, macOS, and Windows with WSL2.
 
 ### P0-03 Domain model validation [human]
-Deps: — · Size: M · Status: todo
+Deps: — · Size: M · Status: in-progress
 - Walk `docs/DOMAIN_MODEL.md` §5 open questions with a pilot hotel (or hospitality advisor); update the model and ERD.
 - Acceptance: signed-off ERD in `docs/`, open questions answered or logged in `docs/DECISIONS.md` §3.
+  - **Partial (2026-10-27):** the ERD and the triage are delivered; the sign-off and the two pilot answers are human.
+    - **Deliverables**:
+      - **The ERD is generated, not written by hand**: `docs/ERD.md` is drawn from the live schema by `php artisan schema:erd` (`app/Modules/Platform/Infrastructure/Documentation/ErdGenerator.php`). The types are logical (`id`, `ref`, `string`, `text`, `int`, `decimal`, `bool`, `date`, `datetime`, `json`), so the diagram is byte for byte the same whether it is drawn from SQLite or from MySQL — verified by generating it from both and comparing.
+      - **The document cannot drift**: `tests/Feature/Platform/ErdDocumentTest.php` regenerates the diagram and fails when the schema and the document disagree. The command has a `--check` mode for the same purpose.
+      - **The module of every table** is read from the Eloquent models of the modules, so the table list cannot be wrong either. The tables without a model are listed as such, so the reviewer sees what is not covered.
+      - **The triage of `docs/DOMAIN_MODEL.md` §5**: three of the five questions are closed (per-unit selling — OQ-01; packages as add-ons; multi-room and groups), and the two that genuinely need the pilot are logged in `docs/DECISIONS.md` §3 as OQ-11 (per-person pricing, child age bands, extra beds) and OQ-12 (deposit and refund policy), with the owner and the week they are needed by.
+    - **What remains (human)**: the sign-off of `docs/ERD.md`, and the answers to OQ-11 and OQ-12 from the pilot interview (`docs/interviews/PILOT_INTERVIEW_PACK.md`).
 
 ### P0-04 Vendor selection ADRs [human]
 Deps: — · Size: M · Status: blocked (human: sandbox credentials)
@@ -80,9 +87,15 @@ Deps: P0-01 · Size: S · Status: done (closeout `0446430`, 7 commits on `feat/p
   - Sample log line (from JsonLogTest): `{"message":"user login","context":{"email":"***@***.***","api_key":"***"},"level":200,"level_name":"INFO","channel":"testing","datetime":"...","extra":{"request_id":"test-id-1234"}}`.
 
 ### P0-08 Pilot hotel recruitment [human]
-Deps: — · Size: L · Status: todo
+Deps: — · Size: L · Status: in-progress
 - Identify and agree terms with 1–2 design-partner hotels; schedule interviews and test windows per `docs/ROADMAP.md` §9.
 - Acceptance: written agreement with at least one hotel; named contact person for product questions.
+  - **Partial (2026-10-27):** everything around the agreement is prepared; the agreement itself is human.
+    - **Deliverables**:
+      - **The interview pack** (`docs/interviews/PILOT_INTERVIEW_PACK.md`): 90 minutes, 21 questions, each carrying the position Stayflow has already taken so the pilot answers "yes", "no" or "not like that" instead of discovering the model. It covers the rate plans, the restrictions, the taxes and the service charge, the housekeeping workflow, the booking and the deposit, and the sign-off of the model.
+      - **The agreement template** (`docs/interviews/PILOT_AGREEMENT_TEMPLATE.md`): the terms, the data rules (no guest data leaves the hotel), the exit and the rollback. The commercial terms are left as placeholders: they are a human decision (`docs/DECISIONS.md` §2, item 1).
+      - **The test calendar** (`docs/interviews/PILOT_TEST_CALENDAR.md`): the windows of `docs/ROADMAP.md` §9 with what has to be ready before each one starts, what the hotel gives and gets, and the go/no-go of the cutover.
+    - **What remains (human)**: a signed agreement with at least one hotel and a named contact person. This is the risk the register carries as R1 ("pilot hotel not secured early"); it is now a meeting and a signature, not an open search.
 
 ### P0-09 Meta developer app and permissions [human]
 Deps: — · Size: S · Status: todo

@@ -123,6 +123,8 @@
 | OQ-08 | Support hours and channel expected during hypercare | PO | week 22 |
 | OQ-09 | ~~Target SLA/uptime promised to the pilot~~ **Resolved 2026-10-12:** **99.5% uptime SLA** (monthly). Load-test thresholds (P6-01) and alerting rules (P6-04) target this figure; infra sizing assumes single-region deployment unless pilot later requires multi-region. See `ARCHITECTURE.md` §17 (NFR targets). | — | — |
 | OQ-10 | Data retention periods (tracking events, communication logs) | LEGAL | week 15 |
+| OQ-11 | Per-person pricing vs flat rate; child age bands; extra-bed fees (DOMAIN_MODEL §5 question 2) | PO | week 8 |
+| OQ-12 | Deposit policies and refund rules per rate plan, and what the payment gateway allows (DOMAIN_MODEL §5 question 5) | PO | week 8 |
 
 ## 4. Gate log (append a note at each gate)
 

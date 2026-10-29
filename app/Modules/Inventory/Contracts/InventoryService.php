@@ -137,7 +137,7 @@ interface InventoryService
      * it dropped: they are sold, and they go back to the pool.
      *
      * @param  list<string>  $dates
- */
+     */
     public function releaseSoldUnits(
         int $propertyId,
         int $roomTypeId,

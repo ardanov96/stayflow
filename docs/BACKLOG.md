@@ -580,9 +580,21 @@ Deps: P2-01, P1-07 · Size: M · Status: done
     - **Verification**: `vendor/bin/pest --testsuite=Unit,Feature,Arch` 601/601 passed (2464 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean.
 
 ### P2-03 Modify reservation
-Deps: P2-02 · Size: L · Status: todo
+Deps: P2-02 · Size: L · Status: done
 - Change dates, room type, guests, rate plan; inventory delta applied atomically; price recalculation with a diff shown to staff.
 - Acceptance: tests for extend/shorten/move-room-type/failed-availability (original stays intact on failure).
+  - **Closeout**:
+    - **Deliverables**:
+      - **The delta is applied atomically** (`ModifyReservationAction`): the quote of the new stay decides the availability and the price; the nights the reservation no longer covers go back to availability (`InventoryService::releaseSoldUnits()`, a new operation of the Inventory module — the sold units of a night had no way back before); the new nights are held and committed; the reservation is rewritten with the version bumped. Everything happens in **one transaction**.
+      - **The price is recalculated and the diff is shown to the staff** (`ReservationModificationDTO`): what changed, which nights were added, which were given back, and what the stay costs now against what it cost before.
+      - **The aggregate can now change** (`Reservation`): the stay, the occupancy, the guests, the total and the rooms have their own mutators, each of them records a **versioned** change; the version is the optimistic lock of the row, so a caller that read the reservation before a change does not write over it.
+      - **The endpoint**: `PATCH /api/reservations/{id}`, behind the `reservations.update` permission, with a `FormRequest` where every field is optional (the staff only sends what changes).
+    - **Acceptance proof** (`tests/Feature/Reservations/ModifyReservationTest.php`):
+      - **Extend**: the extra night is taken, the price goes up by the price of that night, and the diff names it.
+      - **Shorten**: the night goes back to the pool, the price goes down by the price of that night.
+      - **Move room type**: the nights of the old room type go back, the nights of the new one are taken.
+      - **Failed availability**: the modification is refused and the reservation is **exactly as it was** — the same dates, the same total, the same rooms and the same counters.
+    - **Verification**: `vendor/bin/pest --testsuite=Unit,Feature,Arch` 607/607 passed (2492 assertions), `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean.
 
 ### P2-04 Cancel and no-show
 Deps: P2-02 · Size: M · Status: todo

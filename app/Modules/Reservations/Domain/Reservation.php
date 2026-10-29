@@ -60,13 +60,13 @@ final class Reservation
         public readonly string $code,
         public readonly ReservationSource $source,
         public readonly ?string $channelRef,
-        public readonly int $guestId,
-        public readonly string $arrival,
-        public readonly string $departure,
-        public readonly int $adults,
-        public readonly int $children,
-        public readonly int $totalMinor,
-        public readonly string $currency,
+        public int $guestId,
+        public string $arrival,
+        public string $departure,
+        public int $adults,
+        public int $children,
+        public int $totalMinor,
+        public string $currency,
         private ReservationStatus $status = ReservationStatus::PendingPayment,
         array $rooms = [],
         private int $version = 1,
@@ -422,6 +422,99 @@ final class Reservation
     }
 
     /**
+     * Move the stay to other nights.
+     */
+    public function changeStay(string $arrival, string $departure): void
+    {
+        $this->assertValidStay($arrival, $departure);
+
+        $previous = ['arrival' => $this->arrival, 'departure' => $this->departure];
+
+        $this->arrival = $arrival;
+        $this->departure = $departure;
+
+        $this->recordChange([
+            'arrival' => ['from' => $previous['arrival'], 'to' => $arrival],
+            'departure' => ['from' => $previous['departure'], 'to' => $departure],
+        ]);
+    }
+
+    /**
+     * Change the number of people.
+     */
+    public function changeOccupancy(int $adults, int $children): void
+    {
+        if ($adults < 1) {
+            throw new InvalidArgumentException('A reservation needs at least one adult.');
+        }
+
+        if ($children < 0) {
+            throw new InvalidArgumentException('The number of children cannot be negative.');
+        }
+
+        $previous = ['adults' => $this->adults, 'children' => $this->children];
+
+        $this->adults = $adults;
+        $this->children = $children;
+
+        $this->recordChange([
+            'adults' => ['from' => $previous['adults'], 'to' => $adults],
+            'children' => ['from' => $previous['children'], 'to' => $children],
+        ]);
+    }
+
+    /**
+     * Change the guests of the reservation.
+     */
+    public function changeGuest(int $guestId): void
+    {
+        if ($guestId < 1) {
+            throw new InvalidArgumentException('A reservation needs a primary guest.');
+        }
+
+        $previous = $this->guestId;
+
+        $this->guestId = $guestId;
+
+        $this->recordChange(['guest_id' => ['from' => $previous, 'to' => $guestId]]);
+    }
+
+    /**
+     * Change the total of the reservation and the currency it is in.
+     */
+    public function changeTotal(int $totalMinor, string $currency): void
+    {
+        if ($totalMinor < 0) {
+            throw new InvalidArgumentException('The total of a reservation cannot be negative.');
+        }
+
+        if (trim($currency) === '') {
+            throw new InvalidArgumentException('A reservation needs a currency.');
+        }
+
+        $previous = $this->totalMinor;
+
+        $this->totalMinor = $totalMinor;
+        $this->currency = $currency;
+
+        $this->recordChange([
+            'total_minor' => ['from' => $previous, 'to' => $totalMinor],
+        ]);
+    }
+
+    /**
+     * Replace the rooms of the reservation.
+     *
+     * @param  list<ReservationRoom>  $rooms
+     */
+    public function changeRooms(array $rooms): void
+    {
+        $this->rooms = $rooms;
+
+        $this->recordChange(['rooms' => ['count' => count($this->rooms)]]);
+    }
+
+    /**
      * Assign a physical room to one of the rooms of the reservation.
      */
     public function assignUnit(int $roomTypeId, int $roomUnitId): void
@@ -464,6 +557,34 @@ final class Reservation
     private function record(object $event): void
     {
         $this->events[] = $event;
+    }
+
+    /**
+     * Record a change: the version is bumped and the event says what
+     * changed.
+     *
+     * @param  array<string, mixed>  $changes
+     */
+    private function recordChange(array $changes): void
+    {
+        $this->version++;
+
+        $this->record(new ReservationModified(
+            organizationId: $this->organizationId,
+            propertyId: $this->propertyId,
+            reservationId: $this->id ?? 0,
+            changes: $changes,
+            version: $this->version,
+        ));
+    }
+
+    private function assertValidStay(string $arrival, string $departure): void
+    {
+        if (! StayDate::fromString($arrival)->isBefore(StayDate::fromString($departure))) {
+            throw new InvalidArgumentException(
+                "The departure date ({$departure}) must be after the arrival date ({$arrival})."
+            );
+        }
     }
 
     private function assertValid(): void

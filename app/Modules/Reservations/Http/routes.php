@@ -9,4 +9,8 @@ Route::prefix('api/reservations')->middleware(['web', 'auth'])->group(function (
     Route::post('/', [ReservationController::class, 'store'])
         ->middleware('permission:reservations.create')
         ->name('reservations.store');
+
+    Route::patch('/{id}', [ReservationController::class, 'update'])
+        ->middleware('permission:reservations.update')
+        ->name('reservations.update');
 });

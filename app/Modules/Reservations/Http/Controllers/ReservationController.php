@@ -6,6 +6,7 @@ namespace App\Modules\Reservations\Http\Controllers;
 
 use App\Modules\Reservations\Contracts\ReservationService;
 use App\Modules\Reservations\Http\Requests\CreateReservationRequest;
+use App\Modules\Reservations\Http\Requests\ModifyReservationRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
@@ -41,5 +42,29 @@ final class ReservationController
         );
 
         return response()->json($reservation->toArray(), 201);
+    }
+
+    /**
+     * Modify a reservation.
+     */
+    public function update(ModifyReservationRequest $request, int $id): JsonResponse
+    {
+        /** @var array<string, mixed> $validated */
+        $validated = $request->validated();
+
+        $modification = $this->reservations->modify(
+            reservationId: $id,
+            arrival: isset($validated['arrival']) ? (string) $validated['arrival'] : null,
+            departure: isset($validated['departure']) ? (string) $validated['departure'] : null,
+            roomTypeId: isset($validated['room_type_id']) ? (int) $validated['room_type_id'] : null,
+            ratePlanId: isset($validated['rate_plan_id']) ? (int) $validated['rate_plan_id'] : null,
+            adults: isset($validated['adults']) ? (int) $validated['adults'] : null,
+            children: isset($validated['children']) ? (int) $validated['children'] : null,
+            guestId: isset($validated['guest_id']) ? (int) $validated['guest_id'] : null,
+            companionGuestIds: array_map('intval', (array) ($validated['companion_guest_ids'] ?? [])),
+            userId: Auth::id() !== null ? (int) Auth::id() : null,
+        );
+
+        return response()->json($modification->toArray());
     }
 }

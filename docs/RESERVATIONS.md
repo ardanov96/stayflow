@@ -91,18 +91,35 @@ The four tables are `reservations`, `reservation_rooms`,
 `reservation_guests` and `reservation_events` (the trail). The code of a
 reservation is unique per property and carries the day of the property.
 
-## 6. What is not built yet
+## 6. Modifying a reservation (P2-03)
+
+`ModifyReservationAction` changes the dates, the room type, the rate
+plan, the occupancy and the guests. The **inventory follows atomically**:
+
+1. the quote of the new stay decides the availability and the price;
+2. the nights the reservation no longer covers go back to availability
+   (`InventoryService::releaseSoldUnits()`);
+3. the new nights are held and committed;
+4. the reservation is rewritten, with the version bumped.
+
+It all happens in **one transaction**, so a modification that cannot be
+satisfied leaves the reservation exactly as it was: the same nights, the
+same total, the same counters.
+
+The result carries the **diff** the staff sees: what changed, which
+nights were added, which were given back, and what the stay costs now
+against what it cost before.
+
+## 7. What is not built yet
 
 - **No screen.** The PMS reads the reservation through the contract of
   the module; the screen belongs to `P2-17`.
-- **The modification** of a reservation lands with `P2-03` (the
-  versioned modifications of the aggregate are ready for it).
 - **The assignment of a physical room** lands with `P2-05`.
 - **The guest** of a reservation is a soft reference: the `guests` table
   lands with the Guests module (`P5-01`), and the constraint is added
   there.
 
-## 7. Related documents
+## 8. Related documents
 
 - `docs/ARCHITECTURE.md` §7 — the state machine and the booking flow.
 - `docs/DOMAIN_MODEL.md` §2 — the entities, §3 — the invariants.

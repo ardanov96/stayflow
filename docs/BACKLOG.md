@@ -633,9 +633,22 @@ Deps: P2-05, P2-09 · Size: M · Status: todo
 - Acceptance: cannot check out with unresolved balance without manager override (audited).
 
 ### P2-09 Folio ledger
-Deps: P1-05, P2-01 · Size: L · Status: todo · Gate: M2
+Deps: P1-05, P2-01 · Size: L · Status: done · Gate: M2
 - Append-only ledger, charges/taxes/payments/refunds/adjustments, reversal entries, business date handling.
 - Acceptance: invariants 3 and 4 tested, including property-based tests.
+  - **Closeout**:
+    - **Deliverables**:
+      - **The ledger is append-only, and the database says so**: the migration installs a trigger that refuses an `UPDATE` and a `DELETE` of a folio entry (MySQL and SQLite). A correction is another entry that reverses the old one, never an update.
+      - **The four tables**: `folios`, `folio_entries` (signed amounts, the business date, the entry it reverses, the tax snapshot), `payments` (the method, the status, the gateway reference, the idempotency key) and `business_date_closures` (the business dates the night audit closed).
+      - **The aggregate** (`Folio`): the balance, the entries, and the three rules — the balance is the sum of the entries, a reversal never exceeds what is left to reverse of its entry, and a closed business date (or a closed folio) accepts no new entry.
+      - **The money** is minor units with an explicit currency (`App\Support\Money\Money`): an entry in another currency is refused, and the amounts of a folio are never summed across currencies.
+      - **The service** (`FolioService`): every posting happens in one transaction — the entry, the balance and the payment are written together, or nothing is.
+      - **Documentation**: `docs/FOLIO.md`.
+    - **Acceptance proof**:
+      - **Invariant 3** (the balance is the sum of the entries; the entries are never updated or deleted; a reversal never exceeds its entry): Covered by `tests/Feature/Folio/FolioLedgerTest.php` — the balance equals the sum after a charge, a tax and a payment; the database refuses the update and the delete of an entry; a reversal beyond what is left is refused.
+      - **Invariant 4** (a closed business date accepts no new entry): Covered by the same file — the entry on the closed date is refused, another date is accepted, and a closed folio accepts nothing.
+      - **Property-based test**: Covered by `tests/Feature/Folio/FolioPropertyTest.php` — a seeded random sequence of 60 operations (charges, taxes, payments, refunds, adjustments and reversals) and, **after every single step**, the balance of the folio, the balance of the row and the sum of the entries are the same number.
+    - **Verification**: `vendor/bin/pest --testsuite=Unit,Feature,Arch` 618/618 passed, `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean.
 
 ### P2-10 Invoices (PDF) and email
 Deps: P2-09, P1-15 · Size: M · Status: todo

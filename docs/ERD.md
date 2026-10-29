@@ -47,6 +47,15 @@ erDiagram
         datetime created_at
         datetime updated_at
     }
+    business_date_closures {
+        int id PK
+        ref organization_id FK
+        ref property_id FK
+        date date UK
+        datetime closed_at
+        datetime created_at
+        datetime updated_at
+    }
     catalog_media {
         int id PK
         ref organization_id FK
@@ -63,6 +72,32 @@ erDiagram
         text caption
         int sort_order
         int is_primary
+        datetime created_at
+        datetime updated_at
+    }
+    folio_entries {
+        int id PK
+        ref organization_id FK
+        ref folio_id FK
+        string type
+        int amount_minor
+        string currency
+        date business_date
+        datetime posted_at
+        ref reversal_of_id FK
+        string source
+        text tax_snapshot
+        int created_by FK
+        datetime created_at
+    }
+    folios {
+        int id PK
+        ref organization_id FK
+        ref property_id FK
+        ref reservation_id FK
+        string status
+        string currency
+        int balance_minor
         datetime created_at
         datetime updated_at
     }
@@ -172,6 +207,19 @@ erDiagram
         string email PK
         string token
         datetime created_at
+    }
+    payments {
+        int id PK
+        ref organization_id FK
+        ref folio_id FK
+        string method
+        int amount_minor
+        string currency
+        string status
+        string gateway_ref
+        string idempotency_key UK
+        datetime created_at
+        datetime updated_at
     }
     properties {
         int id PK
@@ -436,8 +484,17 @@ erDiagram
     properties ||--o{ audit_logs : "property_id"
     organizations ||--o{ audit_logs : "organization_id"
     organizations ||--o{ billing_events : "organization_id"
+    properties ||--o{ business_date_closures : "property_id"
+    organizations ||--o{ business_date_closures : "organization_id"
     properties ||--o{ catalog_media : "property_id"
     organizations ||--o{ catalog_media : "organization_id"
+    users ||--o{ folio_entries : "created_by"
+    folio_entries ||--o{ folio_entries : "reversal_of_id"
+    folios ||--o{ folio_entries : "folio_id"
+    organizations ||--o{ folio_entries : "organization_id"
+    reservations ||--o{ folios : "reservation_id"
+    properties ||--o{ folios : "property_id"
+    organizations ||--o{ folios : "organization_id"
     users ||--o{ inventory_blocks : "created_by"
     room_types ||--o{ inventory_blocks : "room_type_id"
     properties ||--o{ inventory_blocks : "property_id"
@@ -457,6 +514,8 @@ erDiagram
     users ||--o{ memberships : "user_id"
     properties ||--o{ notification_deliveries : "property_id"
     organizations ||--o{ notification_deliveries : "organization_id"
+    folios ||--o{ payments : "folio_id"
+    organizations ||--o{ payments : "organization_id"
     organizations ||--o{ properties : "organization_id"
     amenities ||--o{ property_amenities : "amenity_id"
     properties ||--o{ property_amenities : "property_id"
@@ -516,7 +575,10 @@ erDiagram
 | `amenities` | catalog |
 | `audit_logs` | platform |
 | `billing_events` | *(no model)* |
+| `business_date_closures` | *(no model)* |
 | `catalog_media` | catalog |
+| `folio_entries` | *(no model)* |
+| `folios` | *(no model)* |
 | `inventory_blocks` | inventory |
 | `inventory_days` | inventory |
 | `inventory_hold_lines` | inventory |
@@ -526,6 +588,7 @@ erDiagram
 | `notification_deliveries` | *(no model)* |
 | `organizations` | platform |
 | `password_reset_tokens` | *(no model)* |
+| `payments` | *(no model)* |
 | `properties` | catalog |
 | `property_amenities` | *(no model)* |
 | `property_policies` | catalog |
@@ -547,7 +610,7 @@ erDiagram
 | `tax_rules` | catalog |
 | `users` | *(no model)* |
 
-The tables marked *(no model)* have no Eloquent model yet: `billing_events`, `notification_deliveries`, `password_reset_tokens`, `property_amenities`, `reservation_room_nights`, `room_type_amenities`, `sessions`, `settings`, `subscription_invoices`, `subscriptions`, `users`.
+The tables marked *(no model)* have no Eloquent model yet: `billing_events`, `business_date_closures`, `folio_entries`, `folios`, `notification_deliveries`, `password_reset_tokens`, `payments`, `property_amenities`, `reservation_room_nights`, `room_type_amenities`, `sessions`, `settings`, `subscription_invoices`, `subscriptions`, `users`.
 <!-- END GENERATED -->
 
 ## Notes

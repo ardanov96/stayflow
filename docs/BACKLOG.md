@@ -602,9 +602,20 @@ Deps: P2-02 · Size: M · Status: todo
 - Acceptance: fee matches policy fixtures; cancellation is idempotent.
 
 ### P2-05 Room assignment
-Deps: P2-02 · Size: M · Status: todo
+Deps: P2-02 · Size: M · Status: done
 - Assign/unassign/move room units; overlap prevention; suggestions for free units.
 - Acceptance: invariant 7 enforced with a concurrency test.
+  - **Closeout**:
+    - **Deliverables**:
+      - **The invariant is enforced by the database** (`reservation_room_nights`): one row per booked night, with a **unique index on (room unit, night)**. A room unit cannot be assigned to two reservations on overlapping nights, whoever gets there first wins and the other is refused — the application never decides it.
+      - **Assign, unassign and move** (`AssignRoomUnitAction`): the nights of the room are booked, released or moved, in one transaction; the guest is never left without a room. The aggregate records the change as a versioned event.
+      - **Suggestions** (`SuggestRoomUnitsAction`): the physical rooms that are free for **every** night of the stay — a room that is free on the first night and taken on the second is not free.
+      - **The Catalog grew one method** (`getRoomUnitsForType()`): the PMS needs the physical rooms to assign them, and it asks the Catalog for them rather than reading its table.
+      - **The endpoints**: `POST /api/reservations/{id}/room-units`, `POST .../room-units/move`, `DELETE .../room-units/{roomTypeId}` and `GET .../room-units/suggestions`.
+    - **Acceptance proof**:
+      - **Invariant 7 enforced with a concurrency test**: Covered by `tests/Concurrency/RoomAssignmentConcurrencyTest.php` — two **processes** try to assign the same room to two reservations that overlap, at the same time, against MySQL 8: exactly one wins, and the room is booked for one reservation only.
+      - **Assign, unassign, move and suggestions**: Covered by `tests/Feature/Reservations/RoomAssignmentTest.php` — the assignment books the nights, a room already booked is refused, the unassignment gives the nights back, the move releases the old room and books the new one, and the suggestions leave out the room that is taken.
+    - **Verification**: `vendor/bin/pest --testsuite=Unit,Feature,Arch` 612/612 passed (2505 assertions), `vendor/bin/pest --testsuite=Concurrency` 9/9 passed, `vendor/bin/phpstan analyse` 0 errors, `vendor/bin/pint --test` clean.
 
 ### P2-06 Tape chart UI
 Deps: P2-05 · Size: L · Status: todo

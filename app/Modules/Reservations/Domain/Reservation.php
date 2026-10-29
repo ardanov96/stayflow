@@ -560,6 +560,54 @@ final class Reservation
     }
 
     /**
+     * Take the physical room away: the nights go back to the pool.
+     */
+    public function unassignUnit(int $roomTypeId): void
+    {
+        if ($this->status->isTerminal()) {
+            throw InvalidReservationTransition::notModifiable($this->status);
+        }
+
+        $rooms = [];
+        $found = false;
+
+        foreach ($this->rooms as $room) {
+            if (! $found && $room->roomTypeId === $roomTypeId) {
+                $rooms[] = new ReservationRoom(
+                    roomTypeId: $room->roomTypeId,
+                    ratePlanId: $room->ratePlanId,
+                    roomUnitId: null,
+                    nights: $room->nights,
+                    id: $room->id,
+                );
+                $found = true;
+
+                continue;
+            }
+
+            $rooms[] = $room;
+        }
+
+        if (! $found) {
+            throw new InvalidArgumentException(
+                "The reservation has no room of the type {$roomTypeId}."
+            );
+        }
+
+        $this->rooms = $rooms;
+        $this->version++;
+
+        $this->record(new RoomAssigned(
+            organizationId: $this->organizationId,
+            propertyId: $this->propertyId,
+            reservationId: $this->id ?? 0,
+            roomTypeId: $roomTypeId,
+            roomUnitId: null,
+            nights: [],
+        ));
+    }
+
+    /**
      * Record a change: the version is bumped and the event says what
      * changed.
      *

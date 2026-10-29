@@ -54,6 +54,37 @@ interface ReservationRepository
      *
      * @param  array<string, mixed>  $payload
      */
+    /**
+     * Book the nights of a physical room for a reservation.
+     *
+     * The database refuses a night that is already booked: the unique
+     * index on (room unit, night) is what enforces the invariant 7 of
+     * docs/DOMAIN_MODEL.md section 3.
+     *
+     * @param  list<string>  $dates
+     */
+    public function bookNights(
+        int $organizationId,
+        int $reservationId,
+        int $reservationRoomId,
+        int $roomUnitId,
+        array $dates,
+    ): void;
+
+    /**
+     * Release the nights a physical room was booked for.
+     *
+     * Returns the number of nights that were released.
+     */
+    public function releaseNights(int $organizationId, int $reservationRoomId): int;
+
+    /**
+     * The nights a physical room is booked for.
+     *
+     * @return list<string>
+     */
+    public function bookedNightsOf(int $organizationId, int $roomUnitId): array;
+
     public function appendEvent(
         int $organizationId,
         int $reservationId,

@@ -285,6 +285,7 @@ final readonly class ModifyReservationAction
                 ratePlanId: $room['rate_plan_id'] !== null ? (int) $room['rate_plan_id'] : null,
                 roomUnitId: $room['room_unit_id'] !== null ? (int) $room['room_unit_id'] : null,
                 nights: (array) $room['nights'],
+                id: (int) $room['id'],
             );
         }
 

@@ -110,16 +110,28 @@ The result carries the **diff** the staff sees: what changed, which
 nights were added, which were given back, and what the stay costs now
 against what it cost before.
 
-## 7. What is not built yet
+## 7. Assigning a physical room (P2-05)
+
+The **database** refuses a room that is already booked: the table
+`reservation_room_nights` holds one row per booked night, with a unique
+index on (room unit, night). That is the invariant 7 of
+`docs/DOMAIN_MODEL.md` §3 — *a room unit cannot be assigned to two
+reservations on overlapping nights* — and it is enforced by the database,
+not by the application: two concurrent assignments of the same room
+cannot both succeed, whichever one gets there first.
+
+The PMS can **assign**, **unassign** and **move** a physical room, and
+it can ask for the rooms that are **free** for every night of the stay.
+
+## 8. What is not built yet
 
 - **No screen.** The PMS reads the reservation through the contract of
   the module; the screen belongs to `P2-17`.
-- **The assignment of a physical room** lands with `P2-05`.
 - **The guest** of a reservation is a soft reference: the `guests` table
   lands with the Guests module (`P5-01`), and the constraint is added
   there.
 
-## 8. Related documents
+## 9. Related documents
 
 - `docs/ARCHITECTURE.md` §7 — the state machine and the booking flow.
 - `docs/DOMAIN_MODEL.md` §2 — the entities, §3 — the invariants.

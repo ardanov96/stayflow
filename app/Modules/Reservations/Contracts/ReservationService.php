@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Reservations\Contracts;
 
+use App\Modules\Catalog\Contracts\DTOs\RoomUnitDTO;
 use App\Modules\Reservations\Contracts\DTOs\ReservationDTO;
 use App\Modules\Reservations\Contracts\DTOs\ReservationModificationDTO;
 
@@ -66,4 +67,44 @@ interface ReservationService
         array $companionGuestIds = [],
         ?int $userId = null,
     ): ReservationModificationDTO;
+
+    /**
+     * Assign a physical room to one of the rooms of the reservation.
+     *
+     * The database refuses a room that is already booked for one of the
+     * nights: the unique index on (room unit, night) is what enforces the
+     * invariant 7 of docs/DOMAIN_MODEL.md section 3.
+     */
+    public function assignRoomUnit(
+        int $reservationId,
+        int $roomTypeId,
+        int $roomUnitId,
+        ?int $userId = null,
+    ): ReservationDTO;
+
+    /**
+     * Take the physical room away: the nights go back to the pool.
+     */
+    public function unassignRoomUnit(
+        int $reservationId,
+        int $roomTypeId,
+        ?int $userId = null,
+    ): ReservationDTO;
+
+    /**
+     * Move the reservation to another physical room of the same type.
+     */
+    public function moveRoomUnit(
+        int $reservationId,
+        int $roomTypeId,
+        int $newRoomUnitId,
+        ?int $userId = null,
+    ): ReservationDTO;
+
+    /**
+     * The physical rooms that are free for the nights of the reservation.
+     *
+     * @return list<RoomUnitDTO>
+     */
+    public function suggestRoomUnits(int $reservationId, int $roomTypeId): array;
 }

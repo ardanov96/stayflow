@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\Reservations\Infrastructure\Services;
 
+use App\Modules\Catalog\Contracts\DTOs\RoomUnitDTO;
 use App\Modules\Platform\Contracts\OrganizationContext;
+use App\Modules\Reservations\Application\Actions\AssignRoomUnitAction;
 use App\Modules\Reservations\Application\Actions\CreateReservationAction;
 use App\Modules\Reservations\Application\Actions\ModifyReservationAction;
+use App\Modules\Reservations\Application\Actions\SuggestRoomUnitsAction;
 use App\Modules\Reservations\Contracts\DTOs\ReservationDTO;
 use App\Modules\Reservations\Contracts\DTOs\ReservationModificationDTO;
 use App\Modules\Reservations\Contracts\ReservationRepository;
@@ -18,6 +21,8 @@ final class EloquentReservationService implements ReservationService
     public function __construct(
         private CreateReservationAction $createReservation,
         private ModifyReservationAction $modifyReservation,
+        private AssignRoomUnitAction $assignRoomUnitAction,
+        private SuggestRoomUnitsAction $suggestRoomUnitsAction,
         private ReservationRepository $reservationRepository,
         private OrganizationContext $organizationContext,
     ) {}
@@ -35,9 +40,87 @@ final class EloquentReservationService implements ReservationService
         return $this->reservationRepository->find($organizationId, $reservationId);
     }
 
+    public function assignRoomUnit(
+        int $reservationId,
+        int $roomTypeId,
+        int $roomUnitId,
+        ?int $userId = null,
+    ): ReservationDTO {
+        return $this->withOrganization(
+            fn (int $organizationId): ReservationDTO => $this->assignRoomUnitAction->assign(
+                organizationId: $organizationId,
+                reservationId: $reservationId,
+                roomTypeId: $roomTypeId,
+                roomUnitId: $roomUnitId,
+                actorId: $userId,
+            ),
+        );
+    }
+
+    public function unassignRoomUnit(
+        int $reservationId,
+        int $roomTypeId,
+        ?int $userId = null,
+    ): ReservationDTO {
+        return $this->withOrganization(
+            fn (int $organizationId): ReservationDTO => $this->assignRoomUnitAction->unassign(
+                organizationId: $organizationId,
+                reservationId: $reservationId,
+                roomTypeId: $roomTypeId,
+                actorId: $userId,
+            ),
+        );
+    }
+
+    public function moveRoomUnit(
+        int $reservationId,
+        int $roomTypeId,
+        int $newRoomUnitId,
+        ?int $userId = null,
+    ): ReservationDTO {
+        return $this->withOrganization(
+            fn (int $organizationId): ReservationDTO => $this->assignRoomUnitAction->move(
+                organizationId: $organizationId,
+                reservationId: $reservationId,
+                roomTypeId: $roomTypeId,
+                newRoomUnitId: $newRoomUnitId,
+                actorId: $userId,
+            ),
+        );
+    }
+
     /**
-     * @param  list<int>  $companionGuestIds
+     * @return list<RoomUnitDTO>
      */
+    public function suggestRoomUnits(int $reservationId, int $roomTypeId): array
+    {
+        return $this->withOrganization(
+            fn (int $organizationId): array => $this->suggestRoomUnitsAction->suggest(
+                organizationId: $organizationId,
+                reservationId: $reservationId,
+                roomTypeId: $roomTypeId,
+            ),
+        );
+    }
+
+    /**
+     * Run the callback with the organization of the current tenant.
+     *
+     * @param  callable(int): mixed  $callback
+     */
+    private function withOrganization(callable $callback): mixed
+    {
+        $organizationId = $this->organizationContext->current()?->organizationId;
+
+        if ($organizationId === null) {
+            throw new InvalidArgumentException(
+                'A tenant context is required to work with the reservations of the organization.'
+            );
+        }
+
+        return $callback($organizationId);
+    }
+
     public function modify(
         int $reservationId,
         ?string $arrival = null,

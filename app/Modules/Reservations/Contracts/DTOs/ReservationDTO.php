@@ -10,7 +10,7 @@ namespace App\Modules\Reservations\Contracts\DTOs;
 final readonly class ReservationDTO
 {
     /**
-     * @param  list<array{room_type_id: int, rate_plan_id: int|null, room_unit_id: int|null, nights: list<array{date: string, price_minor: int}>, total_minor: int}>  $rooms
+     * @param  list<array{id: int, room_type_id: int, rate_plan_id: int|null, room_unit_id: int|null, nights: list<array{date: string, price_minor: int}>, total_minor: int}>  $rooms
      * @param  list<int>  $guestIds
      */
     public function __construct(

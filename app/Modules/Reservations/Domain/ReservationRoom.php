@@ -22,6 +22,7 @@ final readonly class ReservationRoom
         public ?int $ratePlanId = null,
         public ?int $roomUnitId = null,
         public array $nights = [],
+        public ?int $id = null,
     ) {}
 
     /**
@@ -64,6 +65,7 @@ final readonly class ReservationRoom
             ratePlanId: $this->ratePlanId,
             roomUnitId: $roomUnitId,
             nights: $this->nights,
+            id: $this->id,
         );
     }
 }

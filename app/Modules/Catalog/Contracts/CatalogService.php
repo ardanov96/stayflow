@@ -6,6 +6,7 @@ namespace App\Modules\Catalog\Contracts;
 
 use App\Modules\Catalog\Contracts\DTOs\PropertyDTO;
 use App\Modules\Catalog\Contracts\DTOs\RoomTypeDTO;
+use App\Modules\Catalog\Contracts\DTOs\RoomUnitDTO;
 use App\Modules\Catalog\Contracts\DTOs\TaxRuleDTO;
 
 /**
@@ -31,4 +32,14 @@ interface CatalogService
     public function getTaxRulesForProperty(int $propertyId): array;
 
     public function getActiveRoomUnitsCount(int $roomTypeId): int;
+
+    /**
+     * The active room units of a room type.
+     *
+     * The PMS needs the physical rooms to assign them to a reservation
+     * (task P2-05).
+     *
+     * @return list<RoomUnitDTO>
+     */
+    public function getRoomUnitsForType(int $roomTypeId): array;
 }

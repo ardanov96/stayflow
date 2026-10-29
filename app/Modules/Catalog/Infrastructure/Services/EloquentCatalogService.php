@@ -7,9 +7,11 @@ namespace App\Modules\Catalog\Infrastructure\Services;
 use App\Modules\Catalog\Contracts\CatalogService;
 use App\Modules\Catalog\Contracts\DTOs\PropertyDTO;
 use App\Modules\Catalog\Contracts\DTOs\RoomTypeDTO;
+use App\Modules\Catalog\Contracts\DTOs\RoomUnitDTO;
 use App\Modules\Catalog\Contracts\DTOs\TaxRuleDTO;
 use App\Modules\Catalog\Infrastructure\Models\Property;
 use App\Modules\Catalog\Infrastructure\Models\RoomType;
+use App\Modules\Catalog\Infrastructure\Models\RoomUnit;
 use App\Modules\Catalog\Infrastructure\Models\TaxRule;
 use App\Support\Money\TaxAppliesTo;
 use App\Support\Money\TaxKind;
@@ -126,5 +128,28 @@ class EloquentCatalogService implements CatalogService
         }
 
         return $roomType->roomUnits()->where('is_active', true)->count();
+    }
+
+    /**
+     * @return list<RoomUnitDTO>
+     */
+    public function getRoomUnitsForType(int $roomTypeId): array
+    {
+        return RoomUnit::query()
+            ->where('room_type_id', $roomTypeId)
+            ->where('is_active', true)
+            ->orderBy('number')
+            ->get()
+            ->map(static fn (RoomUnit $unit): RoomUnitDTO => new RoomUnitDTO(
+                id: (int) $unit->id,
+                organizationId: (int) $unit->organization_id,
+                propertyId: (int) $unit->property_id,
+                roomTypeId: (int) $unit->room_type_id,
+                number: (string) $unit->number,
+                floor: $unit->floor !== null ? (string) $unit->floor : null,
+                status: $unit->status->value,
+                isActive: (bool) $unit->is_active,
+            ))
+            ->all();
     }
 }

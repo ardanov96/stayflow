@@ -259,6 +259,16 @@ erDiagram
         datetime created_at
         datetime updated_at
     }
+    reservation_room_nights {
+        int id PK
+        ref organization_id FK
+        ref reservation_id FK
+        ref reservation_room_id FK
+        ref room_unit_id FK
+        date date UK
+        datetime created_at
+        datetime updated_at
+    }
     reservation_rooms {
         int id PK
         ref organization_id FK
@@ -465,6 +475,10 @@ erDiagram
     organizations ||--o{ reservation_events : "organization_id"
     reservations ||--o{ reservation_guests : "reservation_id"
     organizations ||--o{ reservation_guests : "organization_id"
+    room_units ||--o{ reservation_room_nights : "room_unit_id"
+    reservation_rooms ||--o{ reservation_room_nights : "reservation_room_id"
+    reservations ||--o{ reservation_room_nights : "reservation_id"
+    organizations ||--o{ reservation_room_nights : "organization_id"
     room_units ||--o{ reservation_rooms : "room_unit_id"
     rate_plans ||--o{ reservation_rooms : "rate_plan_id"
     room_types ||--o{ reservation_rooms : "room_type_id"
@@ -519,6 +533,7 @@ erDiagram
 | `rate_prices` | inventory |
 | `reservation_events` | reservations |
 | `reservation_guests` | reservations |
+| `reservation_room_nights` | *(no model)* |
 | `reservation_rooms` | reservations |
 | `reservations` | reservations |
 | `restrictions_days` | inventory |
@@ -532,7 +547,7 @@ erDiagram
 | `tax_rules` | catalog |
 | `users` | *(no model)* |
 
-The tables marked *(no model)* have no Eloquent model yet: `billing_events`, `notification_deliveries`, `password_reset_tokens`, `property_amenities`, `room_type_amenities`, `sessions`, `settings`, `subscription_invoices`, `subscriptions`, `users`.
+The tables marked *(no model)* have no Eloquent model yet: `billing_events`, `notification_deliveries`, `password_reset_tokens`, `property_amenities`, `reservation_room_nights`, `room_type_amenities`, `sessions`, `settings`, `subscription_invoices`, `subscriptions`, `users`.
 <!-- END GENERATED -->
 
 ## Notes

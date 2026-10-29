@@ -113,12 +113,8 @@ final class EloquentReservationRepository implements ReservationRepository
 
     public function saveRooms(Reservation $reservation): void
     {
-        DB::table('reservation_rooms')
-            ->where('reservation_id', $reservation->id())
-            ->delete();
-
         foreach ($reservation->rooms() as $room) {
-            DB::table('reservation_rooms')->insert([
+            $values = [
                 'organization_id' => $reservation->organizationId,
                 'reservation_id' => $reservation->id(),
                 'property_id' => $reservation->propertyId,
@@ -128,8 +124,21 @@ final class EloquentReservationRepository implements ReservationRepository
                 'nights' => json_encode($room->nights),
                 'total_minor' => $room->totalMinor(),
                 'currency' => $reservation->currency,
-                'created_at' => now(),
                 'updated_at' => now(),
+            ];
+
+            // The room is updated, never deleted and re-inserted: the
+            // nights booked for it point at it.
+            if ($room->id !== null) {
+                DB::table('reservation_rooms')
+                    ->where('id', $room->id)
+                    ->update($values);
+
+                continue;
+            }
+
+            DB::table('reservation_rooms')->insert($values + [
+                'created_at' => now(),
             ]);
         }
     }
@@ -163,6 +172,55 @@ final class EloquentReservationRepository implements ReservationRepository
         DB::table('reservation_guests')->insert($rows);
     }
 
+    /**
+     * @param  list<string>  $dates
+     */
+    public function bookNights(
+        int $organizationId,
+        int $reservationId,
+        int $reservationRoomId,
+        int $roomUnitId,
+        array $dates,
+    ): void {
+        $rows = [];
+
+        foreach ($dates as $date) {
+            $rows[] = [
+                'organization_id' => $organizationId,
+                'reservation_id' => $reservationId,
+                'reservation_room_id' => $reservationRoomId,
+                'room_unit_id' => $roomUnitId,
+                'date' => $date,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        DB::table('reservation_room_nights')->insert($rows);
+    }
+
+    public function releaseNights(int $organizationId, int $reservationRoomId): int
+    {
+        return DB::table('reservation_room_nights')
+            ->where('organization_id', $organizationId)
+            ->where('reservation_room_id', $reservationRoomId)
+            ->delete();
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function bookedNightsOf(int $organizationId, int $roomUnitId): array
+    {
+        return DB::table('reservation_room_nights')
+            ->where('organization_id', $organizationId)
+            ->where('room_unit_id', $roomUnitId)
+            ->orderBy('date')
+            ->pluck('date')
+            ->map(static fn (mixed $date): string => substr((string) $date, 0, 10))
+            ->all();
+    }
+
     public function appendEvent(
         int $organizationId,
         int $reservationId,
@@ -184,12 +242,13 @@ final class EloquentReservationRepository implements ReservationRepository
 
     private function toDto(ReservationModel $model): ReservationDTO
     {
-        /** @var list<array{room_type_id: int, rate_plan_id: int|null, room_unit_id: int|null, nights: list<array{date: string, price_minor: int}>, total_minor: int}> $rooms */
+        /** @var list<array{id: int, room_type_id: int, rate_plan_id: int|null, room_unit_id: int|null, nights: list<array{date: string, price_minor: int}>, total_minor: int}> $rooms */
         $rooms = DB::table('reservation_rooms')
             ->where('reservation_id', $model->id)
             ->orderBy('id')
             ->get()
             ->map(static fn (object $row): array => [
+                'id' => (int) $row->id,
                 'room_type_id' => (int) $row->room_type_id,
                 'rate_plan_id' => $row->rate_plan_id !== null ? (int) $row->rate_plan_id : null,
                 'room_unit_id' => $row->room_unit_id !== null ? (int) $row->room_unit_id : null,
